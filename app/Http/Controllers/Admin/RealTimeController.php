@@ -377,11 +377,7 @@ class RealTimeController extends Controller
             ->select('shops.*', 'area_summary.delivery_region')
             ->when($keyword !== '', function ($query) use ($keyword) {
                 $query->where(function ($q) use ($keyword) {
-                    $q->where('shops.shop_name', 'like', '%' . $keyword . '%')
-                        ->orWhere('shops.owner_name', 'like', '%' . $keyword . '%')
-                        ->orWhere('shops.business_no', 'like', '%' . $keyword . '%')
-                        ->orWhere('shops.main_phone', 'like', '%' . $keyword . '%')
-                        ->orWhere('area_summary.delivery_region', 'like', '%' . $keyword . '%');
+                    $q->where('shops.shop_name', 'like', '%' . $keyword . '%');
                 });
             })
             ->when($productFilter !== '' && $productFilter !== '전체', function ($query) use ($productFilter, $productMap) {
@@ -430,7 +426,7 @@ class RealTimeController extends Controller
         );
 
         if ($request->ajax()) {
-            return view('admin.partials.member-list-popup-content', $data);
+            return view('admin.partials.member-list-popup-list', $data);
         }
 
         return view('admin.member-list-popup', $data);

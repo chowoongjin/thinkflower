@@ -10,6 +10,7 @@ use App\Http\Controllers\SujuListController;
 use App\Http\Controllers\CalculateListController;
 use App\Http\Controllers\PhotoListController;
 use App\Http\Controllers\Admin\RealTimeController;
+use App\Http\Controllers\Admin\AllOrderListController;
 use App\Http\Controllers\Admin\HomeController as AdminHomeController;
 use App\Models\Notice;
 use Illuminate\Support\Facades\Route;
@@ -104,4 +105,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/real-time', [RealTimeController::class, 'index'])->name('real-time.index');
     Route::post('/real-time', [RealTimeController::class, 'store'])->name('real-time.store');
     Route::get('/member-list-popup', [RealTimeController::class, 'memberListPopup'])->name('member-list-popup');
+
+    Route::get('/all-order-list', [AllOrderListController::class, 'index'])->name('all-order-list');
 });

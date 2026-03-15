@@ -7,7 +7,7 @@
                 $nowTime = now()->format('H:i');
                 $isAvailable = ($nowTime >= $openTime && $nowTime <= $closeTime);
 
-                $statusText = $isAvailable ? '영업중' : '배송불가';
+                $statusText = $isAvailable ? '현재 영업중' : '현재 배송불가';
                 $statusClass = $isAvailable ? 'color-green' : 'color-orange';
 
                 $regionText = $shop->delivery_region ?? '-';
@@ -23,35 +23,37 @@
 
                 $memo = $shop->memo ?? '여기에 화원사 메모가 들어갑니다';
                 $shopDisplayName = $shop->shop_name . ($regionText !== '-' ? ' (' . $regionText . ')' : '');
-
                 $pointBalance = number_format((int) ($shop->current_point_balance ?? 0)) . 'P';
                 $pointPolicyLabel = ($shop->point_policy_type ?? 'prepaid') === 'postpaid' ? '후불' : '선불';
             @endphp
 
             <li>
                 <div class="member-info">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <h3 class="shopName" style="margin:0;">
-                            <input
-                                type="radio"
-                                name="member"
-                                value="{{ $shop->id }}"
-                                class="member-radio"
-                                data-target="{{ $target }}"
-                                data-shop-id="{{ $shop->id }}"
-                                data-shop-name="{{ $shop->shop_name }}"
-                                data-shop-display-name="{{ $shopDisplayName }}"
-                            >
-                            {{ $shop->shop_name }}
-                        </h3>
-                        <span>
-                            <em>|</em>
-                            보유포인트 {{ $pointBalance }}
-                            <em>|</em>
-                            {{ $pointPolicyLabel }}
-                        </span>
+                    <div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <h3 class="shopName" style="margin:0;">
+                                <input
+                                    type="radio"
+                                    name="member"
+                                    value="{{ $shop->id }}"
+                                    class="member-radio"
+                                    data-target="{{ $target }}"
+                                    data-shop-id="{{ $shop->id }}"
+                                    data-shop-name="{{ $shop->shop_name }}"
+                                    data-shop-display-name="{{ $shopDisplayName }}"
+                                >
+                                {{ $shop->shop_name }}
+                            </h3>
+                            <span>
+                                <em>|</em>
+                                보유포인트 {{ $pointBalance }}
+                                <em>|</em>
+                                {{ $pointPolicyLabel }}
+                            </span>
+                        </div>
                         <span class="time {{ $statusClass }}">{{ $statusText }}</span>
                     </div>
+
                     <div>
                         <i class="bi bi-alarm-fill"></i> {{ $openTime }} ~ {{ $closeTime }}
                         <em>|</em>

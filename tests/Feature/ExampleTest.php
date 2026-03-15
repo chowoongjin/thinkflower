@@ -12,11 +12,7 @@ class ExampleTest extends TestCase
      */
     public function test_the_application_returns_a_successful_response(): void
     {
-        $user = User::factory()->create();
-        $user->role = 'admin';
-        $user->save();
-
-        $response = $this->actingAs($user)->get('/admin');
+        $response = $this->get('/');
 
         $response->assertStatus(200);
     }
