@@ -1,0 +1,37 @@
+#shoppingmall{
+	width:100%;
+}
+#shoppingmall__header img{
+	width:100%;
+}
+#shoppingmall__header #header-bar{
+	position:absolute;
+	left:0;
+	top:0;
+	width:100%;
+	backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* 사파리 대응 */
+
+    background: rgba(255, 255, 255, 0.2); /* 투명도 */
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+
+    z-index: 1000;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:20px;
+}
+	#shoppingmall__header #header-bar #shop-logo a{
+		color:#fff;
+	}
+	#shoppingmall__header #header-bar #shop-toggle{
+		display:flex;
+		align-items:center;
+		justify-content:flex-end;
+		text-align:right;
+		flex:1 1 auto;
+	}
+	#shoppingmall__header #header-bar #shop-toggle img{
+		width:20px;
+		height:20px;
+	}

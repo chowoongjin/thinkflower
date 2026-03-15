@@ -1,0 +1,525 @@
+/* ================================================
+	로그인 페이지
+================================================ */
+#page-login{
+	background:url('../img/bg_login.jpg') no-repeat center center;
+	background-size:cover;
+	width:100vw;
+	height:100vh;
+}
+#page-login #login{
+	background-color:#fff;
+	width:600px;
+	max-width:600px;
+	height:100vh;
+	position:absolute;
+	right:0;
+	top:0;
+	padding:190px 60px;
+}
+#page-login #login img{
+	height:58px;
+	display:inline-block;
+	margin-bottom:50px;
+}
+
+/* ================================================
+	회원가입 페이지
+================================================ */
+#page-registration .visual + .container-small{
+	padding-bottom:80px;
+}
+#page-registration .visual{
+	height:300px;
+	overflow:hidden;
+}
+#page-registration .visual img{
+	height:100%;
+	object-fit:cover;
+}
+#page-registration .titleArea{
+	padding:80px 0;
+}
+#page-registration .titleArea img{
+	display:inline-block;
+	margin-bottom:40px;
+}
+#page-registration .titleArea p{
+	margin-top:15px;
+}
+
+#page-registration label{
+	margin-bottom:15px;
+}
+
+#section-agree .flex{
+	margin-bottom:20px;
+}
+#section-agree label{
+	font-size:20px;
+}
+#section-submit{
+	text-align:center;
+	padding-top:50px;
+}
+#section-submit .btn{
+	width:100%;
+	margin-top:2rem;
+	font-size:20px;
+	height:70px;
+}
+#section-submit .btn i{
+	padding-left:1rem;
+}
+#section-submit .btn:disabled{
+	background-color:#DBDBDB;
+	border-color:#DBDBDB;
+}
+
+#page-registration footer{
+	background-color:#000000;
+	color:#808080;
+	padding:70px 0;
+}
+#page-registration footer .flex{
+	
+}
+#page-registration footer .flex .flex__col:first-child strong{
+	color:#fff;
+	font-size:28px;
+}
+#page-registration footer .flex .flex__col:first-child  span{
+	color:#333;
+	font-size:28px;
+	font-weight:600;
+	padding-left:1rem;
+}
+#page-registration footer .flex .flex__col:last-child{
+	align-items:center;
+}
+#page-registration footer .flex .flex__col:last-child{
+	font-size:20px;
+}
+#page-registration footer .flex .flex__col:last-child strong{
+	color:#A8F02B;
+	font-size:24px;
+	padding-left:1rem;
+}
+#page-registration footer address{
+	display:block;
+	width:100%;
+	line-height:1.8;
+}
+
+#page-registration hr{
+	display:block;
+	height:1px;
+	background-color:#686868;
+	width:100%;
+	margin:30px 0;
+}
+
+.input-complete{
+	width:100%;
+}
+
+.field-message{
+	display:none;
+}
+.--error input[type="text"],
+.--error input[type="password"]{
+	border:2px solid var(--color-danger);
+}
+.--error .field-message{
+	display:block;
+	margin-top:15px;
+	color:var(--color-danger);
+}
+
+.--success input[type="text"],
+.--success input[type="password"]{
+	border:2px solid var(--color-green);
+}
+.--success i{
+	color:var(--color-green)!important;
+}
+
+/* ======================================
+	본부발주
+====================================== */
+#bonbu-balju input::placeholder{
+	color:#aaa!important;
+}
+
+/* ======================================
+	전체 발주리스트
+====================================== */
+#infoList li{
+	display:flex;
+	align-items:center;
+}
+#infoList img{
+	width:16px;
+	height:16px;
+	margin-right:3px;
+}
+#infoList input{
+	border-radius:0;
+}
+#infoList input.blue,
+#infoList input.red,
+#infoList input.white{
+	border:1px solid #ACB2B5;
+	background-color:#EBEAFF;
+	width:15px;
+	height:15px;
+}
+#infoList input.red{
+	background-color:#FFEAEA;
+}
+#infoList input.white{
+	background-color:#fff;
+}
+
+
+/* ======================================
+	Suju list 3
+====================================== */
+#flex-7-3{
+	justify-content:flex-start;
+}
+#flex-7-3 .flex__col{
+	flex:0;
+}
+#flex-7-3 .flex__col:first-child{
+	min-width:510px;
+	max-width:510px;
+}
+#flex-7-3 .flex__col:last-child{
+	min-width:165px;
+	max-width:165px;
+	justify-content:flex-start;
+	height:100px;
+	padding-left:10px;
+}
+#flex-7-3 .flex__col:last-child button{
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	width:100%;
+	border-radius:0;
+	border:1px solid #121212;
+	height:101px;
+	position:relative;
+	top:-1px;
+	font-size:17px;
+	font-weight:500;
+}
+
+/* ======================================
+	Marketing Center
+====================================== */
+.marketing-box{
+	padding:40px;
+	background-color:#F4F4F4;
+	display:flex;
+	align-items:center;
+	border-radius:1rem;
+	margin-bottom:15px;
+}
+.marketing-box__left,
+.marketing-box__right{
+	flex:1 1 auto;
+}
+.marketing-box__left{
+	
+}
+.marketing-box__right{
+	display:flex;
+	justify-content:flex-end;
+}
+.marketing-box .row,
+.marketing-box .col,
+.marketing-box h3{
+	display:flex;
+	align-items:center;
+	vertical-align:middle;
+}
+.marketing-box h3{
+	margin-right:15px;
+}
+.marketing-box .row img{
+	height:40px;
+	margin-right:5px;
+}
+.marketing-box .row .row-title{
+	color:var(--color-gray800);
+	font-weight:600;
+	font-size:20px;
+}
+.marketing-box .row .badge{
+	border-radius:100px;
+	background-color:#F5FFFE;
+	color:var(--color-gray900);
+	font-size:14px;
+	margin-right:5px;
+	height:40px;
+	display:inline-flex;
+	align-items:center;
+	padding:10px 12px;
+}
+.marketing-box .row p{
+	color:var(--color-gray600);
+	font-size:16px;
+}
+.marketing-box .row + .row{
+	margin-top:15px;
+}
+.marketing-box__right .btn{
+	width:111px;
+	height:46px;
+	background-color:#fff;
+	font-size:16px;
+	color:#000;
+	top:20px;
+	text-align:left;
+	justify-content:flex-start;
+	position:relative;
+	border-radius:.6rem;
+}
+.marketing-box__right .btn i{
+	position:absolute;
+	top:50%;
+	transform:translateY(-50%);
+	right:14%;
+	font-size:1.2rem;
+}
+
+/* ======================================
+	FAX
+====================================== */
+#fax{
+	padding:139px;
+	width: 794px;
+	height: 1123px;
+	margin:0 auto;
+	width: 794px;
+	min-height: 1123px;
+	margin: 0 auto;
+	padding: 40px;
+	box-sizing: border-box;
+	font-size: 14px;
+	line-height: 1.6;
+	color: #000;
+	background: #fff;
+}
+.fax-table{
+	border-collapse:collapse;
+	table-layout:fixed;
+	border:1.5px solid #222;
+	width:100%;
+}
+.fax-table th,
+.fax-table td{
+	color:#222;
+	padding:.45rem .5rem;
+}
+.fax-table tr{
+	border-bottom:1px solid #222;
+}
+.fax-table th{
+	background-color:#EFEFEF;
+	border-right:1px solid #222;
+	font-weight:500;
+}
+.fax-table th + td + th{
+	border-left:1px solid #222;
+}
+.fax-table.--first th,
+.fax-table.--first td{
+	padding:.25rem .5rem;
+}
+
+.fax__head,
+.fax__ment{
+	border:1px solid #222;
+}
+.fax__head{
+	padding:0 .5rem;
+	margin-top:10px;
+}
+.fax__head img{
+	display:block;
+}
+.fax__ment{
+	text-align:center;
+	padding:1rem;
+	font-size:1.1rem;
+}
+
+#fax hr{
+	display:block;
+	width:100%;
+	height:1px;
+	margin:30px 0 20px;
+	position:relative;
+	border:0;
+	background-image: repeating-linear-gradient(
+		to right,
+		#222 0,
+		#222 6px,
+		transparent 6px,
+		transparent 12px
+	);
+	overflow:visible;
+	margin-top:50px;
+	margin-bottom:30px;
+}
+#fax hr::before{
+	content:'절 취 선';
+	letter-spacing:5px;
+	position:absolute;
+	font-size:1rem;
+	top:50%;
+	left:50%;
+	transform:translate(-50%, -50%);
+	background:#fff;
+	padding:16px;
+	color:#222;
+	z-index:1;
+	white-space:nowrap;
+}
+#fax .fax-table.--last th,
+#fax .fax-table.--last td{
+	padding:1rem;
+}
+
+/* ====================================
+	Modal 수주아이템
+==================================== */
+#modal-suju-item table{
+	table-layout:fixed;
+}
+#modal-suju-item table th,
+#modal-suju-item table td{
+	border:0;
+}
+#modal-suju-item table td label{
+	color:#666;
+	font-size:16px;
+	font-weight:400;
+}
+#modal-suju-item input[type="checkbox"]{
+	width:22px;
+	height:22px;
+	border-radius:3px;
+	background-color:#DDDDDD;
+}
+#modal-suju-item input[type="checkbox"]:checked{
+	background:url('../img/ico_check.png') no-repeat center center;
+	background-size:12px 10px;
+	background-color:var(--color-green);
+}
+
+/* ====================================
+	MODAL ::  회원가입 완료시
+==================================== */
+#modal-registration-complete{
+	padding:70px 0;
+	width:620px;
+}
+#modal-registration-complete h1{
+	line-height:1.2;
+	margin-top:40px;
+}
+#modal-registration-complete p{
+	margin-top:15px;
+}
+.dot-loading{
+	display:flex;
+	gap:10px;
+	align-items:center;
+	justify-content:center;
+	margin-top:60px;
+}
+
+.dot-loading span{
+	width:14px;
+	height:14px;
+	background:#6b8f1a; /* 초록색 */
+	border-radius:50%;
+	opacity:0;
+	animation: dotFade 1.5s infinite;
+}
+
+.dot-loading span:nth-child(1){
+	animation-delay:0s;
+}
+.dot-loading span:nth-child(2){
+	animation-delay:.3s;
+}
+.dot-loading span:nth-child(3){
+	animation-delay:.6s;
+}
+
+@keyframes dotFade{
+	0%{
+		opacity:0;
+	}
+	20%{
+		opacity:1;
+	}
+	100%{
+		opacity:0;
+	}
+}
+/* ======================================
+	MODAL :: 포인트
+====================================== */
+#modal-point{
+	width:509px;
+}
+#modal-point input[type="text"]{
+	background-color:#FDFDFD;
+	font-size:16px;
+	border-radius:0;
+	height:49px;
+	border-color:#F0F1F3;
+	font-weight:300;
+}
+#modal-point input[type="text"]::placeholder{
+	color:#D7DBE4;
+}
+
+#modal-point .flex{
+	margin-left:-10px;
+}
+#modal-point .flex .flex__col{
+	padding-left:10px;
+}
+#modal-point .list-column-3{
+	margin-left:-5px;
+}
+#modal-point .list-column-3 > li{
+	padding-left:5px;
+	padding-bottom:5px;
+}
+#modal-point .list-column-3 input[type="radio"]{
+	display:none;
+}
+#modal-point .list-column-3 input[type="radio"] + label{
+	background-color:#F3F4F6;
+	display:flex;
+	justify-content:center;
+	align-items:center;
+	width:100%;
+	border-radius:3px;
+	text-align:center;
+	font-size:14px;
+	color:var(--color-gray600);
+	height:53px;
+}
+#modal-point .list-column-3 input[type="radio"]:checked + label{
+	background-color:#4871EA;
+	color:#fff;
+}
