@@ -17,7 +17,7 @@
                     </colgroup>
                     <tbody>
                     <tr>
-                        <th>본부공지사항</th>
+                        <th>본부공지사항1</th>
                         <td>
                             <p class="color-primary">
                                 @forelse ($generalNotices as $notice)
