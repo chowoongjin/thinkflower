@@ -6,15 +6,6 @@
             alert(@json($errors->first()));
         </script>
     @endif
-    @php
-        $photoUrl = function ($filePath) {
-            if (!$filePath) {
-                return null;
-            }
-
-            return rtrim(config('cafe24.cdn_url'), '/') . '/' . ltrim($filePath, '/');
-        };
-    @endphp
 
     <div id="popup">
         <div class="popup__head">
@@ -26,29 +17,29 @@
                 <div class="flex">
                     <div class="flex__col">
                         <strong>
-                            ✔ 주문번호:
+                            ✔️ 주문번호:
                             <span class="color-purple">{{ $order->order_no }}</span>
-                            | 본부문의:
+                            | 본부문의 :
                             <span class="color-purple">1688-1840</span>
                         </strong>
                     </div>
                     <div class="flex__col">
-                        <span class="color-gray900 fs15">본부문의 시 주문번호를 불러주세요</span>
+                        본부문의 시 주문번호를 불러주세요
                     </div>
                 </div>
             </div>
 
-            <table class="table-data style2-1">
+            <table class="table-data style2-1 mt20">
                 <colgroup>
-                    <col style="width:140px">
+                    <col style="width:90px;min-width:90px">
                     <col>
                 </colgroup>
                 <tbody>
                 <tr>
                     <th>주문상품</th>
                     <td>
-                        <span class="color-purple">{{ $order->product_name }}</span>
-                        <span class="pl10">{{ number_format($order->order_amount) }}원</span>
+                        <span class="color-primary">{{ $order->product_name }}</span>
+                        {{ number_format($order->order_amount) }}원
                     </td>
                 </tr>
                 <tr>
@@ -68,13 +59,12 @@
 
             <form method="POST"
                   action="{{ route('suju-list.complete-store', $order->order_no) }}"
-                  enctype="multipart/form-data"
-                  class="mt20">
+                  enctype="multipart/form-data">
                 @csrf
 
-                <h3 class="tt3 mb15">
+                <h3 class="mt20 fs16 mb10">
                     인수자 정보등록
-                    <span class="color-gray300 fw400">사진은 업로드 시 즉시 저장됩니다.</span>
+                    <span class="color-gray300 fs14 pl8">사진은 업로드 시 즉시 저장됩니다.</span>
                 </h3>
 
                 <div class="photoBoxWrap">
@@ -130,79 +120,85 @@
                     </div>
                 </div>
 
-                <table class="table-data style5 mt24">
-                    <colgroup>
-                        <col style="width:90px;min-width:90px">
-                        <col>
-                    </colgroup>
-                    <tbody>
-                    <tr>
-                        <th>배송완료시간</th>
-                        <td>
-                            <div class="input-group-column">
-                                <div class="col">
-                                    <div class="input-group-checkbox">
-                                        <input type="checkbox" class="toggle-input" id="completed_now">
-                                        <label for="completed_now">현재시간</label>
+                <section class="flex mt20" id="flex-7-3">
+                    <div class="flex__col">
+                        <table class="table-data style4">
+                            <colgroup>
+                                <col style="width:100px;min-width:100px">
+                                <col>
+                            </colgroup>
+                            <tbody>
+                            <tr>
+                                <th>배송완료시간</th>
+                                <td>
+                                    <div class="input-group-column">
+                                        <div class="col">
+                                            <div class="input-group-checkbox">
+                                                <input type="checkbox" id="completed_now">
+                                                <label for="completed_now">현재시간</label>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <input type="text"
+                                                   name="completed_date"
+                                                   id="completed_date"
+                                                   class="datepicker"
+                                                   value="{{ old('completed_date', now()->format('Y-m-d')) }}"
+                                                   style="width:120px;">
+                                        </div>
+                                        <div class="col">
+                                            <select name="completed_hour" id="completed_hour" style="width:110px;">
+                                                <option value="">시간선택</option>
+                                                @for ($i = 0; $i <= 23; $i++)
+                                                    @php $hour = str_pad($i, 2, '0', STR_PAD_LEFT); @endphp
+                                                    <option value="{{ $hour }}" @selected(old('completed_hour', now()->format('H')) === $hour)>
+                                                        {{ (int) $hour }}시
+                                                    </option>
+                                                @endfor
+                                            </select>
+                                        </div>
+                                        <div class="col">
+                                            <select name="completed_minute" id="completed_minute" style="width:65px;">
+                                                @foreach (['00','10','20','30','40','50'] as $minute)
+                                                    <option value="{{ $minute }}" @selected(old('completed_minute', '00') === $minute)>
+                                                        {{ $minute }}분
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
-                                </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>인수자</th>
+                                <td>
+                                    <div class="inline-flex">
+                                        <input type="text"
+                                               name="receiver_name"
+                                               value="{{ old('receiver_name') }}"
+                                               placeholder="인수자 입력"
+                                               style="min-width:295px">
+                                        <input type="text"
+                                               name="receiver_relation"
+                                               value="{{ old('receiver_relation') }}"
+                                               placeholder="관계 입력"
+                                               class="ml5">
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                                <div class="col">
-                                    <input type="text"
-                                           name="completed_date"
-                                           id="completed_date"
-                                           class="datepicker"
-                                           value="{{ old('completed_date', now()->format('Y-m-d')) }}"
-                                           style="width:135px;">
-                                </div>
-
-                                <div class="col" style="min-width:120px;">
-                                    <select name="completed_hour" id="completed_hour" class="custom-select">
-                                        <option value="">시간선택</option>
-                                        @for ($i = 0; $i <= 23; $i++)
-                                            @php $hour = str_pad($i, 2, '0', STR_PAD_LEFT); @endphp
-                                            <option value="{{ $hour }}" @selected(old('completed_hour', now()->format('H')) === $hour)>
-                                            {{ $hour }}시
-                                            </option>
-                                        @endfor
-                                    </select>
-                                </div>
-
-                                <div class="col" style="min-width:100px;">
-                                    <select name="completed_minute" id="completed_minute" class="custom-select">
-                                        <option value="">분선택</option>
-                                        @foreach (['00','10','20','30','40','50'] as $minute)
-                                            <option value="{{ $minute }}" @selected(old('completed_minute', '00') === $minute)>
-                                            {{ $minute }}분
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>인수자</th>
-                        <td>
-                            <div class="input-group-two">
-                                <input type="text"
-                                       name="receiver_name"
-                                       value="{{ old('receiver_name') }}"
-                                       placeholder="인수자 입력">
-                                <input type="text"
-                                       name="receiver_relation"
-                                       value="{{ old('receiver_relation') }}"
-                                       placeholder="관계 입력"
-                                       style="width:160px;">
-                            </div>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+                    <div class="flex__col">
+                        <button type="submit" class="btn btn-primary">배송완료</button>
+                    </div>
+                </section>
             </form>
         </div>
     </div>
 @endsection
+
 @push('styles')
     <style>
         .photoBox__content img {
@@ -213,6 +209,7 @@
         }
     </style>
 @endpush
+
 @push('scripts')
     <script>
         $(function () {
@@ -258,6 +255,41 @@
                 if (!file) return;
 
                 uploadCompletePhoto(this.name, file);
+            });
+
+            $(document).on('change', '#completed_now', function () {
+                if (!$(this).is(':checked')) {
+                    return;
+                }
+
+                const now = new Date();
+                const hh = String(now.getHours()).padStart(2, '0');
+                const mmList = ['00', '10', '20', '30', '40', '50'];
+                let mm = '00';
+
+                for (let i = 0; i < mmList.length; i++) {
+                    if (parseInt(mmList[i], 10) >= now.getMinutes()) {
+                        mm = mmList[i];
+                        break;
+                    }
+
+                    if (i === mmList.length - 1) {
+                        mm = '00';
+                    }
+                }
+
+                if (mm === '00' && now.getMinutes() > 50) {
+                    now.setHours(now.getHours() + 1);
+                }
+
+                const yyyy = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                const finalHour = String(now.getHours()).padStart(2, '0');
+
+                $('#completed_date').val(`${yyyy}-${month}-${dd}`);
+                $('#completed_hour').val(finalHour);
+                $('#completed_minute').val(mm);
             });
         });
     </script>

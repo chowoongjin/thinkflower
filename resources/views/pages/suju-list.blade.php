@@ -215,7 +215,7 @@
 
                 const url = $(this).data('popup-url') || $(this).attr('href');
                 const name = 'sujuCompletePopup';
-                const specs = 'width=780,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no';
+                const specs = 'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no';
 
                 window.open(url, name, specs);
             });

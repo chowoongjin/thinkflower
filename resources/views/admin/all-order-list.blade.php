@@ -17,6 +17,55 @@
 
     <script>
         $(function () {
+            function pad2(num) {
+                return String(num).padStart(2, '0');
+            }
+
+            function formatDate(date) {
+                return date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate());
+            }
+
+            function setDateRangeByPreset(type) {
+                const now = new Date();
+                let startDate = new Date(now);
+                let endDate = new Date(now);
+
+                switch (type) {
+                    case 'thisMonth':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                        break;
+
+                    case 'lastMonth':
+                        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                        endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+                        break;
+
+                    case 'today':
+                        startDate = new Date(now);
+                        endDate = new Date(now);
+                        break;
+
+                    case 'tomorrow':
+                        startDate = new Date(now);
+                        startDate.setDate(startDate.getDate() + 1);
+                        endDate = new Date(startDate);
+                        break;
+
+                    case 'yesterday':
+                        startDate = new Date(now);
+                        startDate.setDate(startDate.getDate() - 1);
+                        endDate = new Date(startDate);
+                        break;
+
+                    default:
+                        return;
+                }
+
+                $('input[name="date_from"]').val(formatDate(startDate));
+                $('input[name="date_to"]').val(formatDate(endDate));
+            }
+
             function loadAllOrderTable(url, data = {}) {
                 $.ajax({
                     url: url,
@@ -49,7 +98,13 @@
                 }
             });
 
-            $(document).on('change', 'input[name="product_type"], input[name="status_type"], input[name="range_preset"]', function () {
+            $(document).on('change', 'input[name="range_preset"]', function () {
+                const type = $(this).val();
+                setDateRangeByPreset(type);
+                $('#all-order-list-filter-form').trigger('submit');
+            });
+
+            $(document).on('change', 'input[name="product_type"], input[name="status_type"]', function () {
                 $('#all-order-list-filter-form').trigger('submit');
             });
 
@@ -62,7 +117,7 @@
                 clearTimeout(keywordTimer);
                 keywordTimer = setTimeout(function () {
                     $('#all-order-list-filter-form').trigger('submit');
-                }, 500);
+                }, 700);
             });
         });
     </script>

@@ -33,22 +33,45 @@
         $ordererName = $order->ordererShop->shop_name ?? '-';
         $receiverName = $order->receiverShop->shop_name ?? '-';
         $hasPhoto = ($order->photos_count ?? 0) > 0;
+
+        $deliveryDateText = '-';
+        $deliveryTimeText = '-';
+        $deliveryAt = null;
+
+        if ($order->delivery_date) {
+            $deliveryDateCarbon = \Carbon\Carbon::parse($order->delivery_date);
+            $deliveryDateText = $deliveryDateCarbon->format('Y/m/d');
+
+            if ($order->delivery_hour !== null && $order->delivery_minute !== null) {
+                $deliveryAt = \Carbon\Carbon::create(
+                    $deliveryDateCarbon->year,
+                    $deliveryDateCarbon->month,
+                    $deliveryDateCarbon->day,
+                    (int) $order->delivery_hour,
+                    (int) $order->delivery_minute,
+                    0
+                );
+            }
+        }
+
+        if ($deliveryAt) {
+            $now = now();
+            $threeHoursLater = $now->copy()->addHours(3);
+
+            if ($deliveryAt->lte($threeHoursLater)) {
+                $deliveryTimeText = '지금즉시';
+            } else {
+                $deliveryTimeText = $deliveryAt->format('H:i');
+            }
+        }
     @endphp
 
     <tr class="{{ $trClass }}">
         <td class="no-ellipsis"><span class="color-blue">{{ $order->order_no }}</span></td>
         <td>
             <span class="color-gray300">{{ optional($order->created_at)->format('Y/m/d H:i') }}</span><br>
-            {{ $order->delivery_date ? \Carbon\Carbon::parse($order->delivery_date)->format('Y/m/d') : '-' }}
-            <span class="color-orange">
-                @if ($order->is_urgent)
-                    지금즉시
-                @elseif (!is_null($order->delivery_hour))
-                    {{ str_pad($order->delivery_hour, 2, '0', STR_PAD_LEFT) }}:{{ str_pad((int) $order->delivery_minute, 2, '0', STR_PAD_LEFT) }}
-                @else
-                    -
-                @endif
-            </span>
+            {{ $deliveryDateText }}
+            <span class="color-orange">{{ $deliveryTimeText }}</span>
         </td>
         <td>
             <span class="color-gray300">{{ $ordererName }}</span><br>
