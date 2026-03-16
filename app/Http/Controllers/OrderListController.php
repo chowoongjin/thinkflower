@@ -76,7 +76,7 @@ class OrderListController extends Controller
         );
 
         if ($request->ajax()) {
-            return view('pages.partials.order-list-content', $data);
+            return view('pages.partials.order-list-table', $data);
         }
 
         return view('pages.order-list', $data);

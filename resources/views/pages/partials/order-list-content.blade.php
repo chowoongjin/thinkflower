@@ -145,6 +145,5 @@
             </table>
         </form>
 
-        @include('pages.partials.order-list-table')
     </section>
 </div>

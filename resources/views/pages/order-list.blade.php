@@ -8,6 +8,10 @@
             </section>
 
             @include('pages.partials.order-list-content')
+
+            <div id="order-list-result">
+                @include('pages.partials.order-list-table')
+            </div>
         </div>
     </div>
 
@@ -86,8 +90,6 @@
                     currentAjax.abort();
                 }
 
-                $('#order-list-content').css('opacity', '0.5');
-
                 currentAjax = $.ajax({
                     url: url,
                     method: 'GET',
@@ -96,7 +98,7 @@
                         'X-Requested-With': 'XMLHttpRequest'
                     },
                     success: function (html) {
-                        $('#order-list-content').replaceWith(html);
+                        $('#order-list-result').html(html);
                         bindDatepicker();
                         syncQuickRangeRadio();
 
@@ -129,7 +131,7 @@
             });
 
             $(document).on('input', 'input.filter-change[type="text"]', function () {
-                scheduleLoad(700);
+                scheduleLoad(500);
             });
 
             $(document).on('change', 'input[name="quick_range"]', function () {

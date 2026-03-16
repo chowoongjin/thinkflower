@@ -109,12 +109,12 @@
                     <td colspan="5">
                         <div class="input-group-radio">
                             <input type="radio" name="product_name" value="" id="test2-1" class="filter-change" {{ request('product_name', '') === '' ? 'checked' : '' }}><label for="test2-1">전체상품</label>
-                            <input type="radio" name="product_name" value="근조" id="test2-2" class="filter-change" {{ request('product_name') === '근조화환' ? 'checked' : '' }}><label for="test2-2">근조화환</label>
-                            <input type="radio" name="product_name" value="축하" id="test2-3" class="filter-change" {{ request('product_name') === '축하화환' ? 'checked' : '' }}><label for="test2-3">축하화환</label>
+                            <input type="radio" name="product_name" value="근조화환" id="test2-2" class="filter-change" {{ request('product_name') === '근조화환' ? 'checked' : '' }}><label for="test2-2">근조화환</label>
+                            <input type="radio" name="product_name" value="축하화환" id="test2-3" class="filter-change" {{ request('product_name') === '축하화환' ? 'checked' : '' }}><label for="test2-3">축하화환</label>
                             <input type="radio" name="product_name" value="꽃바구니" id="test2-4" class="filter-change" {{ request('product_name') === '꽃바구니' ? 'checked' : '' }}><label for="test2-4">꽃바구니</label>
-                            <input type="radio" name="product_name" value="관엽" id="test2-5" class="filter-change" {{ request('product_name') === '관엽식물' ? 'checked' : '' }}><label for="test2-5">관엽식물</label>
-                            <input type="radio" name="product_name" value="동양" id="test2-6" class="filter-change" {{ request('product_name') === '동양란' ? 'checked' : '' }}><label for="test2-6">동양란</label>
-                            <input type="radio" name="product_name" value="서양" id="test2-7" class="filter-change" {{ request('product_name') === '서양란' ? 'checked' : '' }}><label for="test2-7">서양란</label>
+                            <input type="radio" name="product_name" value="관엽식물" id="test2-5" class="filter-change" {{ request('product_name') === '관엽식물' ? 'checked' : '' }}><label for="test2-5">관엽식물</label>
+                            <input type="radio" name="product_name" value="동양란" id="test2-6" class="filter-change" {{ request('product_name') === '동양란' ? 'checked' : '' }}><label for="test2-6">동양란</label>
+                            <input type="radio" name="product_name" value="서양란" id="test2-7" class="filter-change" {{ request('product_name') === '서양란' ? 'checked' : '' }}><label for="test2-7">서양란</label>
                         </div>
                     </td>
                 </tr>
