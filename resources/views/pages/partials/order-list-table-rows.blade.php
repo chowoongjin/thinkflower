@@ -23,8 +23,11 @@
         } elseif ((int) ($order->receiver_shop_id ?? 0) === 0) {
             $statusLabel = '중개대기';
             $statusClass = 'color-red';
-        } elseif ($order->current_status === 'accepted') {
+        } elseif ($order->current_status === 'accepted' && $order->accepted_by_type === 'shop') {
             $statusLabel = '주문접수';
+            $statusClass = '';
+        } elseif ($order->current_status === 'accepted' && $order->accepted_by_type === 'admin') {
+            $statusLabel = '본부접수';
             $statusClass = '';
         } else {
             $statusLabel = '본부접수';
