@@ -107,4 +107,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/member-list-popup', [RealTimeController::class, 'memberListPopup'])->name('member-list-popup');
 
     Route::get('/all-order-list', [AllOrderListController::class, 'index'])->name('all-order-list');
+    Route::get('/all-order-list/{order}/popup', [AllOrderListController::class, 'popup'])->name('all-order-list.popup');
+    Route::get('/all-order-list/{order}/history-modal', [AllOrderListController::class, 'historyModal'])->name('all-order-list.history-modal');
+    Route::get('/all-order-list/{order}/photo-popup', [AllOrderListController::class, 'photoPopup'])->name('all-order-list.photo-popup');
 });

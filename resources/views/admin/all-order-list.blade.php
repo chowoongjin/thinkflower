@@ -15,6 +15,10 @@
         </div>
     </div>
 
+    <div id="modal">
+        <div id="modal-content"></div>
+    </div>
+
     <script>
         $(function () {
             function pad2(num) {
@@ -118,6 +122,50 @@
                 keywordTimer = setTimeout(function () {
                     $('#all-order-list-filter-form').trigger('submit');
                 }, 700);
+            });
+
+            $(document).on('click', '.btn-order-popup', function () {
+                const url = $(this).data('popup-url');
+
+                window.open(
+                    url,
+                    'orderPopup',
+                    'width=1000,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
+            });
+
+            $(document).on('click', '.btn-order-history-modal', function (e) {
+                e.preventDefault();
+
+                const url = $(this).data('history-url');
+                if (!url) return;
+
+                $.ajax({
+                    url: url,
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function (html) {
+                        $('#modal-content').html(html);
+                        $('#modal, body').addClass('active');
+                    },
+                    error: function (xhr) {
+                        console.log(xhr.responseText);
+                        alert('처리내역을 불러오지 못했습니다.');
+                    }
+                });
+            });
+
+            $(document).on('click', '.modal-close', function () {
+                $('#modal, body').removeClass('active');
+                $('#modal-content').empty();
+            });
+            $(document).on('click', '#modal', function (e) {
+                if (e.target.id === 'modal') {
+                    $('#modal, body').removeClass('active');
+                    $('#modal-content').empty();
+                }
             });
         });
     </script>

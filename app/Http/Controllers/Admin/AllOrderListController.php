@@ -119,4 +119,43 @@ class AllOrderListController extends Controller
     {
         return $this->hasMany(OrderPhoto::class, 'order_id');
     }
+
+    public function popup(Order $order)
+    {
+        $order->load([
+            'ordererShop',
+            'receiverShop',
+        ]);
+
+        return view('pages.order-popup', [
+            'order' => $order,
+            'title' => '주문정보',
+        ]);
+    }
+
+    public function historyModal(Order $order)
+    {
+        $histories = $order->histories()
+            ->orderBy('processed_at')
+            ->orderBy('id')
+            ->get();
+
+        return view('admin.partials.all-order-history-modal', [
+            'order' => $order,
+            'histories' => $histories,
+        ]);
+    }
+
+    public function photoPopup(Order $order)
+    {
+        $photos = DB::table('order_photos')
+            ->where('order_id', $order->id)
+            ->orderBy('sort_order')
+            ->get();
+
+        return view('pages.order-photo-popup', [
+            'order' => $order,
+            'photos' => $photos,
+        ]);
+    }
 }

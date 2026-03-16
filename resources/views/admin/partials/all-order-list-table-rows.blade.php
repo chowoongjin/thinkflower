@@ -67,7 +67,15 @@
     @endphp
 
     <tr class="{{ $trClass }}">
-        <td class="no-ellipsis"><span class="color-blue">{{ $order->order_no }}</span></td>
+        <td class="no-ellipsis">
+            <button
+                type="button"
+                class="btn-order-popup"
+                data-popup-url="{{ route('admin.all-order-list.popup', $order) }}"
+            >
+                <span class="color-blue">{{ $order->order_no }}</span>
+            </button>
+        </td>
         <td>
             <span class="color-gray300">{{ optional($order->created_at)->format('Y/m/d H:i') }}</span><br>
             {{ $deliveryDateText }}
@@ -99,14 +107,26 @@
             </select>
         </td>
         <td>
-            <button type="button">
+            <button type="button"
+                    class="btn-order-history-modal"
+                    data-history-url="{{ route('admin.all-order-list.history-modal', $order) }}">
                 <img src="{{ asset('adm/assets/img/ico_doc.png') }}" height="18">
             </button>
         </td>
         <td>
-            <button type="button">
-                <img src="{{ asset($hasPhoto ? 'adm/assets/img/ico_photo_on.png' : 'adm/assets/img/ico_photo_off.png') }}" height="18">
-            </button>
+            @if ($hasPhoto)
+                <button
+                    type="button"
+                    class="btn-photo-popup"
+                    data-photo-url="{{ route('admin.all-order-list.photo-popup', $order) }}"
+                >
+                    <img src="{{ asset('adm/assets/img/ico_photo_on.png') }}" height="18">
+                </button>
+            @else
+                <button type="button" disabled>
+                    <img src="{{ asset('adm/assets/img/ico_photo_off.png') }}" height="18">
+                </button>
+            @endif
         </td>
         <td class="fs13">
             @if ($order->current_status === 'delivered')

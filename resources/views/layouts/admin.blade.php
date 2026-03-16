@@ -39,7 +39,6 @@
                     <li class="{{ request()->routeIs('admin.real-time.*') ? 'active' : '' }}">
                         <a href="{{ route('admin.real-time.index') }}">실시간발주</a>
                     </li>
-                    <li class="{{ request()->routeIs('admin.all-order-list.*') ? 'active' : '' }}">
                     <li class="{{ request()->routeIs('admin.all-order-list') ? 'active' : '' }}">
                         <a href="{{ route('admin.all-order-list') }}">전체수발주</a>
                     </li>
