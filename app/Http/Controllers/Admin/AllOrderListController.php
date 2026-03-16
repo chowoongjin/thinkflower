@@ -83,7 +83,9 @@ class AllOrderListController extends Controller
             ->withQueryString();
 
         $totalOrderAmount = (clone $query)->sum('original_amount');
-        $totalPaymentAmount = (clone $query)->sum('order_amount');
+        $totalPaymentAmount = (clone $query)
+            ->where('current_status', 'delivered')
+            ->sum('order_amount');
 
         $data = compact(
             'orders',
@@ -100,7 +102,11 @@ class AllOrderListController extends Controller
         );
 
         if ($request->ajax()) {
-            return view('admin.partials.all-order-list-table', $data);
+            return response()->json([
+                'table_html' => view('admin.partials.all-order-list-table', $data)->render(),
+                'total_order_amount' => number_format($totalOrderAmount),
+                'total_payment_amount' => number_format($totalPaymentAmount),
+            ]);
         }
 
         return view('admin.all-order-list', $data);
@@ -127,9 +133,8 @@ class AllOrderListController extends Controller
             'receiverShop',
         ]);
 
-        return view('pages.order-popup', [
+        return view('admin.all-order-popup', [
             'order' => $order,
-            'title' => '주문정보',
         ]);
     }
 

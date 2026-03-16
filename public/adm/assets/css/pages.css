@@ -632,3 +632,16 @@
 #popup-member-result .member-info.disabled > div:first-child > *:not(.time) {
     opacity: .5;
 }
+
+#adminBtns li .btn {
+    width: 100%;
+    background-color: #F8F9FF;
+    border-color: #878787;
+    height: 51px;
+    color: #383838;
+}
+
+#adminBtns li .btn img {
+    height: 18px;
+    margin-right: 1rem;
+}

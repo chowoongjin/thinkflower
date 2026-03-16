@@ -70,7 +70,7 @@
                 $('input[name="date_to"]').val(formatDate(endDate));
             }
 
-            function loadAllOrderTable(url, data = {}) {
+            function loadAllOrderTable(url, data = null) {
                 $.ajax({
                     url: url,
                     method: 'GET',
@@ -78,8 +78,32 @@
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
                     },
-                    success: function (html) {
-                        $('#all-order-list-table-area').html(html);
+                    success: function (res) {
+                        if (typeof res === 'object' && res.table_html !== undefined) {
+                            $('#all-order-list-table-area').html(res.table_html);
+
+                            if (res.total_order_amount !== undefined) {
+                                $('#summary-total-order-amount').text(res.total_order_amount);
+                            }
+
+                            if (res.total_payment_amount !== undefined) {
+                                $('#summary-total-payment-amount').text(res.total_payment_amount);
+                            }
+                        } else {
+                            $('#all-order-list-table-area').html(res);
+                        }
+
+                        let nextUrl = url;
+
+                        if (data) {
+                            const queryString = typeof data === 'string'
+                                ? data
+                                : $.param(data);
+
+                            nextUrl = queryString ? (url + '?' + queryString) : url;
+                        }
+
+                        window.history.replaceState({}, '', nextUrl);
                     },
                     error: function (xhr) {
                         console.log(xhr.responseText);
@@ -95,11 +119,11 @@
 
             $(document).on('click', '#all-order-list-table-area .pagination a', function (e) {
                 e.preventDefault();
-                const url = $(this).attr('href');
-                if (url) {
-                    const separator = url.includes('?') ? '&' : '?';
-                    loadAllOrderTable(url + separator + $('#all-order-list-filter-form').serialize());
-                }
+
+                const href = $(this).attr('href');
+                if (!href) return;
+
+                loadAllOrderTable(href);
             });
 
             $(document).on('change', 'input[name="range_preset"]', function () {
@@ -166,6 +190,19 @@
                     $('#modal, body').removeClass('active');
                     $('#modal-content').empty();
                 }
+            });
+
+            $(document).on('click', '.btn-photo-popup', function (e) {
+                e.preventDefault();
+
+                const url = $(this).data('photo-url');
+                if (!url) return;
+
+                window.open(
+                    url,
+                    'photoPopup',
+                    'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
             });
         });
     </script>

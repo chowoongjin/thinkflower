@@ -46,9 +46,9 @@
             <tr>
                 <th>조회기간 현황</th>
                 <td colspan="5">
-                    <span class="color-active fw500">전체회원 발주금액(본부발주)</span> {{ number_format($totalOrderAmount) }}원
+                    <span class="color-active fw500">전체회원 발주금액(본부발주)</span> <span id="summary-total-order-amount">{{ number_format($totalOrderAmount) }}</span>원
                     <span class="pl2 pr2">|</span>
-                    <span class="color-orange fw500">전체회원 수주금액(본부 및 발주사 → 수주사)</span> {{ number_format($totalPaymentAmount) }}원
+                    <span class="color-orange fw500">전체회원 수주금액(본부 및 발주사 → 수주사)</span> <span id="summary-total-payment-amount">{{ number_format($totalPaymentAmount) }}</span>원
                 </td>
             </tr>
             <tr>

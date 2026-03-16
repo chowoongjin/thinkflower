@@ -9,7 +9,7 @@
 	--color-primary: #152C70;
 	--color-text:#222;
 	--color-danger: #EE4C2A;
-	
+
 	--color-gray200: #CFD2D3;
 	--color-gray300: #ACB2B5;
 	--color-gray400: #838A8E;
@@ -18,13 +18,13 @@
 	--color-gray700: #4C4E53;
 	--color-gray800: #434648;
 	--color-gray900: #303334;
-	
+
 	--color-border-100: #E6E7E8;
-	
+
 	--color-guide: #818181;
 	--color-orange: #F04D2B;
 	--color-green: #678F20;
-	
+
 	--color-active: #4771EA;
 	--color-blue: #4771EA;
 }
@@ -110,7 +110,7 @@ body{
 	padding:24px 30px;
 	min-width:1170px;
 	min-width:1170px;
-	width:100%;	
+	width:100%;
 }
 .container-small{
 
@@ -174,7 +174,7 @@ body{
 	#header__nav > ul > li.active > a{
 		color:var(--color-primary);
 	}
-	
+
 	#header__select{
 		position:absolute;
 		right:0;
@@ -226,7 +226,7 @@ body{
 		background-color:#162C70;
 		color:#fff;
 	}
-	
+
 #body{
 	display:flex;
 }
@@ -255,7 +255,7 @@ body{
 	#sidebar .row .row-desc{
 		color:var(--color-gray500);
 	}
-	
+
 	#sidebar .btn-point{
 		background-color:#F5F8FF;
 		border:1px solid #DFE4F3;
@@ -264,7 +264,7 @@ body{
 		margin-top:15px;
 		font-size:13px;
 	}
-	
+
 	#sidebar .sidebar-title{
 		color:#152C70;
 		font-weight:500;
@@ -272,7 +272,7 @@ body{
 		margin-bottom:20px;
 		display:inline-block;
 	}
-	
+
 	#sidebar__tel strong{
 		font-weight:700;
 		font-size:20px;
@@ -294,7 +294,7 @@ body{
 	#sidebar ul li a{
 		color:#222;
 	}
-	
+
 	/* -- 활성,비활성 -- */
 	.status-on,
 	.status-off{
@@ -343,7 +343,7 @@ body{
 }
 #footer img#footer-logo{
 	height:42px;
-}	
+}
 #footer address{
 	color:var(--color-gray300);
 }
@@ -372,4 +372,8 @@ body{
 }
 #popup .popup__body{
 	padding:20px;
+}
+
+#adminBtns{
+    margin-bottom: 20px;
 }

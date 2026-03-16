@@ -17,26 +17,28 @@
         $statusSelectClass = '';
         if ($order->current_status === 'delivered') {
             $statusSelectClass = 'success';
-        } elseif ($order->brokerage_type === 'waiting') {
+        } elseif ((int) ($order->receiver_shop_id ?? 0) === 0) {
             $statusSelectClass = 'active';
         }
 
-        $statusLabel = '주문접수';
+        $statusLabel = '본부접수';
+
         if ($order->current_status === 'delivered') {
             $statusLabel = '배송완료';
-        } elseif ($order->brokerage_type === 'waiting') {
+        } elseif ((int) ($order->receiver_shop_id ?? 0) === 0) {
             $statusLabel = '중개필요';
-        } elseif ($order->order_type === 'hq') {
-            $statusLabel = '본부접수';
+        } elseif ($order->current_status === 'accepted') {
+            $statusLabel = '주문접수';
+        } elseif ($order->order_type === 'direct') {
+            $statusLabel = '주문접수';
         }
 
         $ordererName = $order->ordererShop->shop_name ?? '-';
-        $receiverName = $order->receiverShop->shop_name ?? '-';
+        $receiverName = $order->receiverShop->shop_name ?? '본부수발주사업부';
         $hasPhoto = ($order->photos_count ?? 0) > 0;
 
         $deliveryDateText = '-';
         $deliveryTimeText = '-';
-        $deliveryAt = null;
 
         if ($order->delivery_date) {
             $deliveryDateCarbon = \Carbon\Carbon::parse($order->delivery_date);
@@ -51,17 +53,15 @@
                     (int) $order->delivery_minute,
                     0
                 );
-            }
-        }
 
-        if ($deliveryAt) {
-            $now = now();
-            $threeHoursLater = $now->copy()->addHours(3);
+                $now = now();
+                $threeHoursLater = $now->copy()->addHours(3);
 
-            if ($deliveryAt->lte($threeHoursLater)) {
-                $deliveryTimeText = '지금즉시';
-            } else {
-                $deliveryTimeText = $deliveryAt->format('H:i');
+                if ($deliveryAt->lte($threeHoursLater)) {
+                    $deliveryTimeText = '지금즉시';
+                } else {
+                    $deliveryTimeText = $deliveryAt->format('H:i');
+                }
             }
         }
     @endphp

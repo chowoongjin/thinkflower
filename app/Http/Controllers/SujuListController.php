@@ -168,6 +168,7 @@ class SujuListController extends Controller
                 'brokerage_type' => 'assigned',
                 'current_status' => 'accepted',
                 'accepted_at' => now(),
+                'accepted_by_type' => 'shop',
             ]);
 
             DB::table('order_histories')->insert([
@@ -223,6 +224,7 @@ class SujuListController extends Controller
                 'brokerage_type' => 'waiting',
                 'current_status' => 'submitted',
                 'accepted_at' => null,
+                'accepted_by_type' => null,
             ]);
 
             DB::table('order_histories')->insert([
@@ -311,14 +313,6 @@ class SujuListController extends Controller
         if ($order->current_status === 'delivered') {
             throw ValidationException::withMessages([
                 'receiver_name' => '이미 배송완료 처리된 주문입니다.',
-            ]);
-        }
-
-        $photoCount = OrderPhoto::where('order_id', $order->id)->count();
-
-        if ($photoCount < 1) {
-            throw ValidationException::withMessages([
-                'receiver_name' => '배송완료 처리 전 배송사진을 1장 이상 업로드해 주세요.',
             ]);
         }
 
