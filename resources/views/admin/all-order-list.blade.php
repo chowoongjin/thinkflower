@@ -154,7 +154,7 @@
                 window.open(
                     url,
                     'orderPopup',
-                    'width=1000,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                    'width=1000,height=890,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
                 );
             });
 

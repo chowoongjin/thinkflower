@@ -16,11 +16,11 @@ class AllOrderListController extends Controller
     {
         $dateFrom = $request->filled('date_from')
             ? $request->input('date_from')
-            : Carbon::today()->startOfMonth()->format('Y-m-d');
+            : Carbon::today()->subDays(15)->format('Y-m-d');
 
         $dateTo = $request->filled('date_to')
             ? $request->input('date_to')
-            : Carbon::today()->format('Y-m-d');
+            : Carbon::today()->addDays(15)->format('Y-m-d');
 
         $productType = trim((string) $request->input('product_type', '전체상품'));
         $statusType = trim((string) $request->input('status_type', '전체상태'));
@@ -161,6 +161,174 @@ class AllOrderListController extends Controller
         return view('pages.order-photo-popup', [
             'order' => $order,
             'photos' => $photos,
+        ]);
+    }
+
+    public function assignReceiver(Request $request, Order $order)
+    {
+        $validated = $request->validate([
+            'receiver_shop_id' => ['required', 'integer', 'exists:shops,id'],
+        ]);
+
+        $adminUser = $request->user();
+        $fromStatus = $order->current_status;
+
+        $order->update([
+            'receiver_shop_id' => $validated['receiver_shop_id'],
+            'assigned_by_admin_user_id' => $adminUser->id,
+            'brokerage_type' => 'assigned',
+            'current_status' => 'submitted',
+            'accepted_at' => null,
+            'accepted_by_type' => null,
+            'delivered_at' => null,
+            'receiver_name' => null,
+            'receiver_relation' => null,
+        ]);
+
+        DB::table('order_histories')->insert([
+            'order_id' => $order->id,
+            'order_no' => $order->order_no,
+            'history_type' => 'updated',
+            'message' => '<strong>본부 수발주사업부</strong> 에서 수주사 중개 시작',
+            'processed_at' => now(),
+            'actor_user_id' => $adminUser->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('order_status_logs')->insert([
+            'order_id' => $order->id,
+            'from_status' => $fromStatus,
+            'to_status' => 'submitted',
+            'changed_by_user_id' => $adminUser->id,
+            'memo' => '본부 수주사 지정',
+            'created_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+        ]);
+    }
+    public function accept(Request $request, Order $order)
+    {
+        $adminUser = $request->user();
+
+        abort_unless($adminUser, 403);
+
+        if ((int) ($order->receiver_shop_id ?? 0) === 0) {
+            return response()->json([
+                'message' => '수주사가 지정되지 않은 주문입니다.',
+            ], 422);
+        }
+
+        if ($order->current_status === 'delivered') {
+            return response()->json([
+                'message' => '배송완료된 주문건 입니다.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($order, $adminUser) {
+            $lockedOrder = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            $fromStatus = $lockedOrder->current_status;
+
+            if ((int) ($lockedOrder->receiver_shop_id ?? 0) === 0) {
+                abort(422, '수주사가 지정되지 않은 주문입니다.');
+            }
+
+            if ($lockedOrder->current_status === 'delivered') {
+                abort(422, '배송완료된 주문건 입니다.');
+            }
+
+            $lockedOrder->update([
+                'brokerage_type' => 'assigned',
+                'current_status' => 'accepted',
+                'accepted_at' => now(),
+                'accepted_by_type' => 'admin',
+                'assigned_by_admin_user_id' => $adminUser->id,
+            ]);
+
+            DB::table('order_histories')->insert([
+                'order_id' => $lockedOrder->id,
+                'order_no' => $lockedOrder->order_no,
+                'history_type' => 'accepted',
+                'message' => '<strong>본부 수발주사업부</strong> 에서 주문접수 처리',
+                'processed_at' => now(),
+                'actor_user_id' => $adminUser->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::table('order_status_logs')->insert([
+                'order_id' => $lockedOrder->id,
+                'from_status' => $fromStatus,
+                'to_status' => 'accepted',
+                'changed_by_user_id' => $adminUser->id,
+                'memo' => '본부 주문접수 처리',
+                'created_at' => now(),
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => '주문접수 처리되었습니다.',
+        ]);
+    }
+    public function resetBrokerage(Request $request, Order $order)
+    {
+        $adminUser = $request->user();
+
+        abort_unless($adminUser, 403);
+
+        if ($order->current_status === 'delivered') {
+            return response()->json([
+                'message' => '배송완료된 주문건 입니다.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($order, $adminUser) {
+            $lockedOrder = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            $fromStatus = $lockedOrder->current_status;
+
+            if ($lockedOrder->current_status === 'delivered') {
+                abort(422, '배송완료된 주문건 입니다.');
+            }
+
+            $lockedOrder->update([
+                'receiver_shop_id' => null,
+                'assigned_by_admin_user_id' => null,
+                'brokerage_type' => 'waiting',
+                'current_status' => 'submitted',
+                'accepted_at' => null,
+                'accepted_by_type' => null,
+                'delivered_at' => null,
+                'receiver_name' => null,
+                'receiver_relation' => null,
+            ]);
+
+            DB::table('order_histories')->insert([
+                'order_id' => $lockedOrder->id,
+                'order_no' => $lockedOrder->order_no,
+                'history_type' => 'updated',
+                'message' => '<strong>본부 수발주사업부</strong> 에서 수주사 재선정',
+                'processed_at' => now(),
+                'actor_user_id' => $adminUser->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::table('order_status_logs')->insert([
+                'order_id' => $lockedOrder->id,
+                'from_status' => $fromStatus,
+                'to_status' => 'submitted',
+                'changed_by_user_id' => $adminUser->id,
+                'memo' => '수주사지정 초기화',
+                'created_at' => now(),
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => '중개대기로 변경되었습니다.',
         ]);
     }
 }

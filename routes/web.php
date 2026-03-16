@@ -110,4 +110,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/all-order-list/{order}/popup', [AllOrderListController::class, 'popup'])->name('all-order-list.popup');
     Route::get('/all-order-list/{order}/history-modal', [AllOrderListController::class, 'historyModal'])->name('all-order-list.history-modal');
     Route::get('/all-order-list/{order}/photo-popup', [AllOrderListController::class, 'photoPopup'])->name('all-order-list.photo-popup');
+    Route::post('/all-order-list/{order}/assign-receiver', [AllOrderListController::class, 'assignReceiver'])->name('all-order-list.assign-receiver');
+    Route::post('/all-order-list/{order}/accept', [AllOrderListController::class, 'accept'])->name('all-order-list.accept');
+    Route::post('/all-order-list/{order}/reset-brokerage', [AllOrderListController::class, 'resetBrokerage'])->name('all-order-list.reset-brokerage');
 });

@@ -158,7 +158,20 @@
             const shopId = $(this).data("shop-id");
             const shopDisplayName = $(this).data("shop-display-name");
 
+            if (target === "receiver2") {
+                if (!confirm('선택한 수주사로 지정하시겠습니까?\n확인을 누르시면 바로 수주사가 지정됩니다.')) {
+                    $(this).prop('checked', false);
+                    return;
+                }
+            }
+
             if (window.opener && !window.opener.closed) {
+                if (target === "receiver2" && typeof window.opener.setSelectedReceiverShop === 'function') {
+                    window.opener.setSelectedReceiverShop(shopId, shopDisplayName);
+                    window.close();
+                    return;
+                }
+
                 if (target === "orderer") {
                     window.opener.document.getElementById("orderer_shop_id").value = shopId;
                     window.opener.document.getElementById("orderer_shop_name").value = shopDisplayName;

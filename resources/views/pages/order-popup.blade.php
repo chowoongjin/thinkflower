@@ -75,7 +75,7 @@
                         <span class="color-primary">{{ optional($order->created_at)->format('Y-m-d H:i') }}</span>
                     </td>
                     <th>접수일시</th>
-                    <td>{{ optional($order->created_at)->format('Y-m-d H:i') }}</td>
+                    <td>{{ optional($order->accepted_at)->format('Y-m-d H:i') ?: '-' }}</td>
                 </tr>
                 <tr>
                     <th>발주업체</th>

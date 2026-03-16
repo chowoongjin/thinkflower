@@ -17,20 +17,18 @@
         $statusSelectClass = '';
         if ($order->current_status === 'delivered') {
             $statusSelectClass = 'success';
-        } elseif ((int) ($order->receiver_shop_id ?? 0) === 0) {
+        } elseif ($order->current_status !== 'accepted') {
             $statusSelectClass = 'active';
         }
 
-        $statusLabel = '본부접수';
-
         if ($order->current_status === 'delivered') {
             $statusLabel = '배송완료';
-        } elseif ((int) ($order->receiver_shop_id ?? 0) === 0) {
+        } elseif ($order->current_status === 'accepted' && $order->accepted_by_type === 'admin') {
+            $statusLabel = '본부접수';
+        } elseif ($order->current_status === 'accepted' && $order->accepted_by_type === 'shop') {
+            $statusLabel = '주문접수';
+        } else {
             $statusLabel = '중개필요';
-        } elseif ($order->current_status === 'accepted') {
-            $statusLabel = '주문접수';
-        } elseif ($order->order_type === 'direct') {
-            $statusLabel = '주문접수';
         }
 
         $ordererName = $order->ordererShop->shop_name ?? '-';
