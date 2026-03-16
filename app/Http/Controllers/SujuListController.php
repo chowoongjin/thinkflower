@@ -102,7 +102,7 @@ class SujuListController extends Controller
         );
 
         if ($request->ajax()) {
-            return view('pages.partials.suju-list-content', $data);
+            return view('pages.partials.suju-list-table', $data);
         }
 
         return view('pages.suju-list', $data);
@@ -194,6 +194,7 @@ class SujuListController extends Controller
         return response()->view('pages.popup-action-result', [
             'message' => '주문이 접수되었습니다.',
             'redirectCurrentTo' => route('suju-list.popup', $order->order_no),
+            'redirectParentTo' => route('suju-list'),
         ]);
     }
 

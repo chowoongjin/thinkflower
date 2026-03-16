@@ -3,10 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
 
 class OrderListController extends Controller
 {
@@ -22,6 +21,11 @@ class OrderListController extends Controller
             ? $request->date_to
             : Carbon::today()->addDays(15)->format('Y-m-d');
 
+        $productName = trim((string) $request->input('product_name', ''));
+        $orderNo = trim((string) $request->input('order_no', ''));
+        $deliveryAddr1 = trim((string) $request->input('delivery_addr1', ''));
+        $recipientName = trim((string) $request->input('recipient_name', ''));
+
         $query = Order::query()
             ->with(['ordererShop', 'receiverShop'])
             ->withCount('photos')
@@ -29,9 +33,7 @@ class OrderListController extends Controller
             ->whereDate('delivery_date', '>=', $dateFrom)
             ->whereDate('delivery_date', '<=', $dateTo);
 
-        if ($request->filled('product_name')) {
-            $productName = trim($request->product_name);
-
+        if ($productName !== '') {
             if ($productName === '근조화환') {
                 $query->where(function ($q) {
                     $q->where('product_name', 'like', '근조3단%')
@@ -47,16 +49,16 @@ class OrderListController extends Controller
             }
         }
 
-        if ($request->filled('order_no')) {
-            $query->where('order_no', 'like', '%' . trim($request->order_no) . '%');
+        if ($orderNo !== '') {
+            $query->where('order_no', 'like', '%' . $orderNo . '%');
         }
 
-        if ($request->filled('delivery_addr1')) {
-            $query->where('delivery_addr1', 'like', '%' . trim($request->delivery_addr1) . '%');
+        if ($deliveryAddr1 !== '') {
+            $query->where('delivery_addr1', 'like', '%' . $deliveryAddr1 . '%');
         }
 
-        if ($request->filled('recipient_name')) {
-            $query->where('recipient_name', 'like', '%' . trim($request->recipient_name) . '%');
+        if ($recipientName !== '') {
+            $query->where('recipient_name', 'like', '%' . $recipientName . '%');
         }
 
         $orders = (clone $query)
@@ -72,7 +74,11 @@ class OrderListController extends Controller
             'summaryCount',
             'summaryAmount',
             'dateFrom',
-            'dateTo'
+            'dateTo',
+            'productName',
+            'orderNo',
+            'deliveryAddr1',
+            'recipientName'
         );
 
         if ($request->ajax()) {
@@ -81,6 +87,7 @@ class OrderListController extends Controller
 
         return view('pages.order-list', $data);
     }
+
     public function popup(Request $request, Order $order)
     {
         abort_unless($order->created_user_id === $request->user()->id, 403);
@@ -95,6 +102,7 @@ class OrderListController extends Controller
             'title' => '주문정보',
         ]);
     }
+
     public function historyModal(Request $request, Order $order)
     {
         abort_unless($order->created_user_id === $request->user()->id, 403);
@@ -109,6 +117,7 @@ class OrderListController extends Controller
             'histories' => $histories,
         ]);
     }
+
     public function photoPopup(Request $request, Order $order)
     {
         abort_unless($order->created_user_id === $request->user()->id, 403);

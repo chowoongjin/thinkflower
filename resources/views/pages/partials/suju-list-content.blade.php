@@ -145,8 +145,5 @@
             </table>
         </form>
 
-        <div id="suju-list-result">
-            @include('pages.partials.suju-list-table')
-        </div>
     </section>
 </div>

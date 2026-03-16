@@ -5,36 +5,55 @@
 @forelse ($orders as $order)
     @php
         $deliveryDate = optional($order->delivery_date)->format('Y-m-d');
-        $trClass = '';
+    $trClass = '';
 
-        if ($order->current_status !== 'delivered' && $deliveryDate) {
-            if ($deliveryDate === $today) {
-                $trClass = 'tr-warning';
-            } elseif ($deliveryDate > $today) {
-                $trClass = 'tr-primary';
-            } else {
-                $trClass = 'tr-warning';
-            }
+    if ($order->current_status !== 'delivered' && $deliveryDate) {
+        if ($deliveryDate === $today) {
+            $trClass = 'tr-warning';
+        } elseif ($deliveryDate > $today) {
+            $trClass = 'tr-primary';
+        } else {
+            $trClass = 'tr-warning';
         }
+    }
 
-        $createdText = optional($order->created_at)->format('Y/m/d H:i') ?: '-';
-        $deliveryText = optional($order->delivery_date)->format('Y/m/d') ?: '-';
+    $createdText = optional($order->created_at)->format('Y/m/d H:i') ?: '-';
+    $deliveryText = optional($order->delivery_date)->format('Y/m/d') ?: '-';
+    $deliveryTypeText = '';
 
-        $deliveryTypeText = $order->is_urgent
-            ? '지금즉시'
-            : ($order->delivery_time_type ?? '');
+    if ($order->delivery_date && $order->delivery_hour !== null && $order->delivery_minute !== null) {
+        $deliveryAt = \Carbon\Carbon::create(
+            $order->delivery_date->format('Y'),
+            $order->delivery_date->format('m'),
+            $order->delivery_date->format('d'),
+            (int) $order->delivery_hour,
+            (int) $order->delivery_minute,
+            0
+        );
 
-        $deliveryStatus = $order->delivered_at
-            ? ($order->receiver_relation ?: ($order->receiver_name ?: '완료'))
-            : null;
+        $now = now();
+        $threeHoursLater = $now->copy()->addHours(3);
 
-        $hasPhoto = (int) ($order->photos_count ?? 0) > 0;
+        if ($deliveryAt->lte($threeHoursLater)) {
+            $deliveryTypeText = '지금즉시';
+        } else {
+            $deliveryTypeText = $deliveryAt->format('H:i');
+        }
+    } elseif ($order->is_urgent) {
+        $deliveryTypeText = '지금즉시';
+    }
+
+    $deliveryStatus = $order->delivered_at
+        ? ($order->receiver_relation ?: ($order->receiver_name ?: '완료'))
+        : null;
+
+    $hasPhoto = (int) ($order->photos_count ?? 0) > 0;
     @endphp
 
     <tr class="{{ $trClass }}">
         <td class="no-ellipsis">
             <a href="{{ route('suju-list.popup', $order->order_no) }}"
-               class="color-blue order-popup-link"
+               class="color-blue suju-popup-link"
                data-popup-url="{{ route('suju-list.popup', $order->order_no) }}">
                 {{ $order->order_no }}
             </a>
@@ -74,11 +93,9 @@
         </td>
 
         <td>
-            <button
-                type="button"
-                class="btn-order-history-modal"
-                data-history-url="{{ route('suju-list.history-modal', $order->order_no) }}"
-            >
+            <button type="button"
+                    class="btn-order-history-modal"
+                    data-history-url="{{ route('suju-list.history-modal', $order) }}">
                 <img src="{{ asset('assets/img/ico_doc.png') }}" height="18">
             </button>
         </td>
@@ -98,14 +115,19 @@
         </td>
 
         <td class="fs13">
-            @if($deliveryStatus)
-                <span>{{ $deliveryStatus }}</span>
+            @if ($order->current_status === 'delivered')
+                {{ $order->receiver_name ?: '미입력' }}
+                @if (!empty($order->receiver_relation))
+                    <br>
+                    <span class="color-gray300">{{ $order->receiver_relation }}</span>
+                @endif
             @else
-                <a href="{{ route('suju-list.complete-popup', $order->order_no) }}"
-                   class="btn btn-orange order-complete-popup-link"
-                   data-popup-url="{{ route('suju-list.complete-popup', $order->order_no) }}">
+                <button type="button"
+                        class="btn btn-orange btn-complete-popup"
+                        data-popup-url="{{ route('suju-list.complete-popup', $order->order_no) }}"
+                        data-order-status="{{ $order->current_status }}">
                     등록
-                </a>
+                </button>
             @endif
         </td>
     </tr>

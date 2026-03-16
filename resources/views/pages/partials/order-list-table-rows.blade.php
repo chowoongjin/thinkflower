@@ -16,8 +16,21 @@
 
         $receiverShopName = optional($order->receiverShop)->shop_name ?: '본부수발주사업부';
         $hasPhoto = (int) ($order->photos_count ?? 0) > 0;
-    @endphp
 
+        if ($order->current_status === 'delivered') {
+            $statusLabel = '배송완료';
+            $statusClass = '';
+        } elseif ((int) ($order->receiver_shop_id ?? 0) === 0) {
+            $statusLabel = '중개대기';
+            $statusClass = 'color-red';
+        } elseif ($order->current_status === 'accepted') {
+            $statusLabel = '주문접수';
+            $statusClass = '';
+        } else {
+            $statusLabel = '본부접수';
+            $statusClass = '';
+        }
+    @endphp
     <tr class="{{ $rowClass }}">
         <td class="no-ellipsis">
             <a href="{{ route('order-list.popup', $order->order_no) }}"
@@ -28,9 +41,35 @@
         </td>
         <td>
             <span class="color-gray300">{{ optional($order->created_at)->format('Y/m/d H:i') }}</span><br>
-            {{ optional($order->delivery_date)->format('Y/m/d') }}
-            @if($order->delivery_hour !== null && $order->delivery_minute !== null)
-                <span class="color-orange">{{ str_pad($order->delivery_hour, 2, '0', STR_PAD_LEFT) }}:{{ str_pad($order->delivery_minute, 2, '0', STR_PAD_LEFT) }}</span>
+
+            @php
+                $deliveryDateText = optional($order->delivery_date)->format('Y/m/d');
+                $deliveryTimeText = '';
+
+                if ($order->delivery_date && $order->delivery_hour !== null && $order->delivery_minute !== null) {
+                    $deliveryAt = \Carbon\Carbon::create(
+                        $order->delivery_date->format('Y'),
+                        $order->delivery_date->format('m'),
+                        $order->delivery_date->format('d'),
+                        (int) $order->delivery_hour,
+                        (int) $order->delivery_minute,
+                        0
+                    );
+
+                    $now = now();
+                    $threeHoursLater = $now->copy()->addHours(3);
+
+                    if ($deliveryAt->lte($threeHoursLater)) {
+                        $deliveryTimeText = '지금즉시';
+                    } else {
+                        $deliveryTimeText = $deliveryAt->format('H:i');
+                    }
+                }
+            @endphp
+
+            {{ $deliveryDateText }}
+            @if($deliveryTimeText !== '')
+                <span class="color-orange">{{ $deliveryTimeText }}</span>
             @endif
         </td>
         <td>
@@ -74,10 +113,10 @@
             @endif
         </td>
         <td class="fs13">
-            @if($order->brokerage_type === 'waiting')
-                <span class="color-red">중개대기</span>
+            @if($statusClass)
+                <span class="{{ $statusClass }}">{{ $statusLabel }}</span>
             @else
-                <span>{{ $order->brokerage_type }}</span>
+                <span>{{ $statusLabel }}</span>
             @endif
         </td>
     </tr>

@@ -90,6 +90,8 @@
                     currentAjax.abort();
                 }
 
+                $('#order-list-result').css('opacity', '0.5');
+
                 currentAjax = $.ajax({
                     url: url,
                     method: 'GET',
@@ -115,6 +117,7 @@
                     },
                     complete: function () {
                         currentAjax = null;
+                        $('#order-list-result').css('opacity', '1');
                     }
                 });
             }
@@ -131,7 +134,7 @@
             });
 
             $(document).on('input', 'input.filter-change[type="text"]', function () {
-                scheduleLoad(500);
+                scheduleLoad(700);
             });
 
             $(document).on('change', 'input[name="quick_range"]', function () {

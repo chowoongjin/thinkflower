@@ -8,6 +8,10 @@
             </section>
 
             @include('pages.partials.suju-list-content')
+
+            <div id="suju-list-result">
+                @include('pages.partials.suju-list-table')
+            </div>
         </div>
     </div>
 
@@ -86,7 +90,7 @@
                     currentAjax.abort();
                 }
 
-                $('#suju-list-content').css('opacity', '0.5');
+                $('#suju-list-result').css('opacity', '0.5');
 
                 currentAjax = $.ajax({
                     url: url,
@@ -96,7 +100,7 @@
                         'X-Requested-With': 'XMLHttpRequest'
                     },
                     success: function (html) {
-                        $('#suju-list-content').replaceWith(html);
+                        $('#suju-list-result').html(html);
                         bindDatepicker();
                         syncQuickRangeRadio();
 
@@ -113,6 +117,7 @@
                     },
                     complete: function () {
                         currentAjax = null;
+                        $('#suju-list-result').css('opacity', '1');
                     }
                 });
             }
@@ -171,14 +176,20 @@
                 }
             });
 
-            $(document).on('click', '.order-popup-link', function (e) {
+            bindDatepicker();
+            syncQuickRangeRadio();
+
+            $(document).on('click', '.suju-popup-link', function (e) {
                 e.preventDefault();
 
                 const url = $(this).data('popup-url') || $(this).attr('href');
-                const name = 'sujuPopup';
-                const specs = 'width=1000,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no';
+                if (!url) return;
 
-                window.open(url, name, specs);
+                window.open(
+                    url,
+                    'sujuPopup',
+                    'width=1000,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
             });
 
             $(document).on('click', '.btn-order-history-modal', function (e) {
@@ -210,28 +221,38 @@
                 $('body').removeClass('overflow-hidden');
             });
 
-            $(document).on('click', '.order-complete-popup-link', function (e) {
-                e.preventDefault();
-
-                const url = $(this).data('popup-url') || $(this).attr('href');
-                const name = 'sujuCompletePopup';
-                const specs = 'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no';
-
-                window.open(url, name, specs);
-            });
-
             $(document).on('click', '.order-photo-popup-link', function (e) {
                 e.preventDefault();
 
                 const url = $(this).data('popup-url') || $(this).attr('href');
-                const name = 'orderPhotoPopup';
-                const specs = 'width=800,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no';
+                if (!url) return;
 
-                window.open(url, name, specs);
+                window.open(
+                    url,
+                    'orderPhotoPopup',
+                    'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
             });
 
-            bindDatepicker();
-            syncQuickRangeRadio();
+            $(document).on('click', '.btn-complete-popup', function (e) {
+                e.preventDefault();
+
+                const orderStatus = $(this).data('order-status');
+                const popupUrl = $(this).data('popup-url');
+
+                if (orderStatus !== 'accepted') {
+                    alert('주문 접수 후 등록 가능합니다.');
+                    return;
+                }
+
+                if (!popupUrl) return;
+
+                window.open(
+                    popupUrl,
+                    'completePopup',
+                    'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
+            });
         });
     </script>
 @endsection
