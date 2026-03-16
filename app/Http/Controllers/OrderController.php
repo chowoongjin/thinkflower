@@ -129,11 +129,11 @@ class OrderController extends Controller
 
                 'original_amount' => (int) $validated['original_amount'],
                 'order_amount' => $orderAmount,
-                'supply_amount' => 0,
+                'supply_amount' => $orderAmount,
                 'brokerage_fee' => 0,
                 'payment_amount' => $orderAmount,
                 'point_used_amount' => $orderAmount,
-                'point_earned_amount' => 0,
+                'point_earned_amount' => $orderAmount,
 
                 'delivery_zipcode' => null,
                 'delivery_addr1' => $validated['delivery_addr1'],
@@ -302,11 +302,11 @@ class OrderController extends Controller
 
                 'original_amount' => (int) $validated['original_amount'],
                 'order_amount' => $orderAmount,
-                'supply_amount' => 0,
+                'supply_amount' => $orderAmount,
                 'brokerage_fee' => 0,
                 'payment_amount' => $orderAmount,
                 'point_used_amount' => $orderAmount,
-                'point_earned_amount' => 0,
+                'point_earned_amount' => $orderAmount,
 
                 'delivery_zipcode' => null,
                 'delivery_addr1' => $validated['delivery_addr1'],

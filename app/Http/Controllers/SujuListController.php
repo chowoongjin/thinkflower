@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\PointTransaction;
 use App\Models\Shop;
+use App\Models\OrderPhoto;
+use App\Models\OrderHistory;
 use App\Services\Cafe24FileUploadService;
 use App\Services\PointService;
 use Carbon\Carbon;
@@ -250,19 +252,6 @@ class SujuListController extends Controller
         ]);
     }
 
-    protected function makeShopDisplayName($shop): string
-    {
-        $shopName = $shop?->shop_name ?? '미지정 화원';
-
-        $regionLabel = DB::table('shop_delivery_areas')
-            ->join('regions', 'shop_delivery_areas.region_id', '=', 'regions.id')
-            ->where('shop_delivery_areas.shop_id', $shop?->id)
-            ->orderBy('shop_delivery_areas.id')
-        ->value('regions.sido');
-
-        return $shopName . ($regionLabel ? '(' . $regionLabel . ')' : '');
-    }
-
     public function completePopup(Request $request, Order $order)
     {
         $shop = $request->user()?->shop;
@@ -303,86 +292,135 @@ class SujuListController extends Controller
     public function completeStore(Request $request, Order $order)
     {
         $user = $request->user();
-        $shop = $user?->shop;
-
-        abort_unless($shop, 403);
-        abort_unless((int) $order->receiver_shop_id === (int) $shop->id, 403);
+        abort_unless($user, 403);
 
         $validated = $request->validate([
             'completed_date' => ['required', 'date'],
-            'completed_hour' => ['required'],
-            'completed_minute' => ['required'],
-            'receiver_name' => ['required', 'string', 'max:50'],
+            'completed_hour' => ['required', 'integer', 'between:0,23'],
+            'completed_minute' => ['required', 'in:00,10,20,30,40,50'],
+            'receiver_name' => ['required', 'string', 'max:100'],
             'receiver_relation' => ['nullable', 'string', 'max:50'],
         ], [
-            'receiver_name.required' => '인수자명을 입력해 주세요.',
-            'completed_date.required' => '배송완료일을 선택해 주세요.',
+            'completed_date.required' => '배송완료일을 입력해 주세요.',
+            'completed_hour.required' => '배송완료시간을 선택해 주세요.',
+            'completed_minute.required' => '배송완료분을 선택해 주세요.',
+            'receiver_name.required' => '인수자를 입력해 주세요.',
         ]);
 
-        DB::transaction(function () use ($order, $user, $validated, $shop) {
-            $order->refresh();
+        if ($order->current_status === 'delivered') {
+            throw ValidationException::withMessages([
+                'receiver_name' => '이미 배송완료 처리된 주문입니다.',
+            ]);
+        }
 
-            if ($order->current_status === 'delivered') {
+        $photoCount = OrderPhoto::where('order_id', $order->id)->count();
+
+        if ($photoCount < 1) {
+            throw ValidationException::withMessages([
+                'receiver_name' => '배송완료 처리 전 배송사진을 1장 이상 업로드해 주세요.',
+            ]);
+        }
+
+        $deliveredAt = Carbon::createFromFormat(
+            'Y-m-d H:i:s',
+            $validated['completed_date'] . ' ' .
+            str_pad((string) $validated['completed_hour'], 2, '0', STR_PAD_LEFT) . ':' .
+            $validated['completed_minute'] . ':00'
+        );
+
+        DB::transaction(function () use ($order, $user, $validated, $deliveredAt) {
+            $lockedOrder = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if ($lockedOrder->current_status === 'delivered') {
                 throw ValidationException::withMessages([
-                    'order' => '이미 배송완료 처리된 주문입니다.',
+                    'receiver_name' => '이미 배송완료 처리된 주문입니다.',
                 ]);
             }
 
-            $receiverShop = Shop::where('id', $shop->id)
-                ->lockForUpdate()
-                ->firstOrFail();
+            $fromStatus = $lockedOrder->current_status;
 
-            $oldStatus = $order->current_status;
-            $shopDisplayName = $this->makeShopDisplayName($shop);
-
-            $completedAt = $validated['completed_date'] . ' ' .
-                str_pad($validated['completed_hour'], 2, '0', STR_PAD_LEFT) . ':' .
-                str_pad($validated['completed_minute'], 2, '0', STR_PAD_LEFT) . ':00';
-
-            $creditAmount = (int) $order->order_amount;
-
-            $order->update([
+            // brokerage_type 은 waiting / assigned / not_needed 구조이므로 배송완료 시 current_status 만 변경
+            $lockedOrder->update([
                 'current_status' => 'delivered',
-                'delivered_at' => $completedAt,
+                'delivered_at' => $deliveredAt,
                 'receiver_name' => $validated['receiver_name'],
                 'receiver_relation' => $validated['receiver_relation'] ?? null,
-                'point_earned_amount' => $creditAmount,
             ]);
 
-            $this->pointService->creditForDelivery(
-                $receiverShop,
-                $user,
-                $order,
-                $creditAmount,
-                '배송완료 포인트 적립'
-            );
+            $receiverShop = $lockedOrder->receiver_shop_id
+                ? Shop::where('id', $lockedOrder->receiver_shop_id)->lockForUpdate()->first()
+                : null;
 
-            DB::table('order_histories')->insert([
-                'order_id' => $order->id,
-                'order_no' => $order->order_no,
+            OrderHistory::create([
+                'order_id' => $lockedOrder->id,
+                'order_no' => $lockedOrder->order_no,
                 'history_type' => 'delivered',
-                'message' => '수주사 <strong>' . $shopDisplayName . '</strong> 에서 배송완료 처리',
+                'message' => '수주사 <strong>' . $this->makeShopDisplayName($receiverShop) . '</strong> 인수정보 업로드 완료',
                 'processed_at' => now(),
                 'actor_user_id' => $user->id,
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
             DB::table('order_status_logs')->insert([
-                'order_id' => $order->id,
-                'from_status' => $oldStatus,
+                'order_id' => $lockedOrder->id,
+                'from_status' => $fromStatus,
                 'to_status' => 'delivered',
                 'changed_by_user_id' => $user->id,
-                'memo' => '수주사 배송완료 처리',
+                'memo' => '배송완료 및 인수정보 등록',
                 'created_at' => now(),
             ]);
+
+            // 정책: 수주사는 배송완료 시 발주금액(order_amount) 만큼 적립
+            $pointAmount = (int) $lockedOrder->point_earned_amount;
+
+            if ($pointAmount <= 0) {
+                $pointAmount = (int) $lockedOrder->order_amount;
+
+                if ($pointAmount > 0) {
+                    $lockedOrder->update([
+                        'point_earned_amount' => $pointAmount,
+                    ]);
+                }
+            }
+
+            if ($receiverShop && $pointAmount > 0) {
+                $alreadyCredited = DB::table('point_transactions')
+                    ->where('order_id', $lockedOrder->id)
+                    ->where('shop_id', $receiverShop->id)
+                    ->where('transaction_type', 'order_credit')
+                    ->exists();
+
+                if (!$alreadyCredited) {
+                    $beforeBalance = (int) $receiverShop->current_point_balance;
+                    $afterBalance = $beforeBalance + $pointAmount;
+
+                    $receiverShop->update([
+                        'current_point_balance' => $afterBalance,
+                    ]);
+
+                    DB::table('point_transactions')->insert([
+                        'shop_id' => $receiverShop->id,
+                        'user_id' => $user->id,
+                        'order_id' => $lockedOrder->id,
+                        'payment_transaction_id' => null,
+                        'transaction_no' => $this->generatePointTransactionNo(),
+                        'transaction_type' => 'order_credit',
+                        'direction' => 'in',
+                        'amount' => $pointAmount,
+                        'balance_before' => $beforeBalance,
+                        'balance_after' => $afterBalance,
+                        'summary' => '배송완료 포인트 적립',
+                        'description' => '주문번호 ' . $lockedOrder->order_no . ' 배송완료 처리',
+                        'transacted_at' => now(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
         });
 
-        return response()->view('pages.popup-action-result', [
-            'message' => '배송완료 등록이 완료되었습니다.',
-            'redirectParentTo' => route('suju-list'),
-            'closeWindow' => true,
-        ]);
+        return redirect()
+            ->route('suju-list.complete-popup', $order->order_no)
+            ->with('success', '배송완료 처리되었습니다.');
     }
 
     public function uploadPhoto(Request $request, Order $order)
@@ -479,12 +517,26 @@ class SujuListController extends Controller
             'photos' => $photos,
         ]);
     }
+    protected function makeShopDisplayName(?Shop $shop): string
+    {
+        if (!$shop) {
+            return '미지정 화원';
+        }
+
+        $regionLabel = DB::table('shop_delivery_areas')
+            ->join('regions', 'shop_delivery_areas.region_id', '=', 'regions.id')
+            ->where('shop_delivery_areas.shop_id', $shop->id)
+            ->orderBy('shop_delivery_areas.id')
+            ->value('regions.sido');
+
+        return $shop->shop_name . ($regionLabel ? ' (' . $regionLabel . ')' : '');
+    }
 
     protected function generatePointTransactionNo(): string
     {
         do {
-            $transactionNo = 'PT' . now()->format('YmdHis') . strtoupper(Str::random(6));
-        } while (PointTransaction::where('transaction_no', $transactionNo)->exists());
+            $transactionNo = 'PT' . now()->format('YmdHis') . str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+        } while (DB::table('point_transactions')->where('transaction_no', $transactionNo)->exists());
 
         return $transactionNo;
     }

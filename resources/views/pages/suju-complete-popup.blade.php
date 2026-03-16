@@ -1,6 +1,15 @@
 @extends('layouts.popup')
 
 @section('content')
+    @if (session('success'))
+        <script>
+            alert(@json(session('success')));
+
+            if (window.opener && !window.opener.closed) {
+                window.opener.location.reload();
+            }
+        </script>
+    @endif
     @if ($errors->any())
         <script>
             alert(@json($errors->first()));
@@ -211,86 +220,84 @@
 @endpush
 
 @push('scripts')
-    <script>
-        $(function () {
-            function uploadCompletePhoto(fieldName, file) {
-                const formData = new FormData();
-                formData.append('_token', @json(csrf_token()));
-                formData.append('photo_field', fieldName);
-                formData.append('photo_file', file);
+    @push('scripts')
+        <script>
+            $(function () {
+                function uploadCompletePhoto(fieldName, file) {
+                    const formData = new FormData();
+                    formData.append('_token', @json(csrf_token()));
+                    formData.append('photo_field', fieldName);
+                    formData.append('photo_file', file);
 
-                $.ajax({
-                    url: @json(route('suju-list.upload-photo', $order->order_no)),
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function (res) {
-                        if (res.message) {
-                            alert(res.message);
+                    $.ajax({
+                        url: @json(route('suju-list.upload-photo', $order->order_no)),
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function (res) {
+                            if (res.message) {
+                                alert(res.message);
+                            }
+
+                            if (res.reload_parent && window.opener && !window.opener.closed) {
+                                window.opener.location.reload();
+                            }
+
+                            if (res.reload) {
+                                window.location.reload();
+                            }
+                        },
+                        error: function (xhr) {
+                            const msg =
+                                xhr.responseJSON?.message ||
+                                xhr.responseJSON?.errors?.photo_file?.[0] ||
+                                xhr.responseJSON?.errors?.photo_field?.[0] ||
+                                '사진 업로드에 실패했습니다.';
+
+                            alert(msg);
                         }
+                    });
+                }
 
-                        if (res.reload_parent && window.opener && !window.opener.closed) {
-                            window.opener.location.reload();
-                        }
+                $(document).on('change', '#photo_shop, #photo_site, #photo_extra', function () {
+                    const file = this.files && this.files[0] ? this.files[0] : null;
+                    if (!file) return;
 
-                        if (res.reload) {
-                            window.location.reload();
-                        }
-                    },
-                    error: function (xhr) {
-                        const msg =
-                            xhr.responseJSON?.message ||
-                            xhr.responseJSON?.errors?.photo_file?.[0] ||
-                            xhr.responseJSON?.errors?.photo_field?.[0] ||
-                            '사진 업로드에 실패했습니다.';
-
-                        alert(msg);
-                    }
+                    uploadCompletePhoto(this.name, file);
                 });
-            }
 
-            $(document).on('change', '#photo_shop, #photo_site, #photo_extra', function () {
-                const file = this.files && this.files[0] ? this.files[0] : null;
-                if (!file) return;
-
-                uploadCompletePhoto(this.name, file);
-            });
-
-            $(document).on('change', '#completed_now', function () {
-                if (!$(this).is(':checked')) {
-                    return;
-                }
-
-                const now = new Date();
-                const hh = String(now.getHours()).padStart(2, '0');
-                const mmList = ['00', '10', '20', '30', '40', '50'];
-                let mm = '00';
-
-                for (let i = 0; i < mmList.length; i++) {
-                    if (parseInt(mmList[i], 10) >= now.getMinutes()) {
-                        mm = mmList[i];
-                        break;
+                $(document).on('change', '#completed_now', function () {
+                    if (!$(this).is(':checked')) {
+                        return;
                     }
 
-                    if (i === mmList.length - 1) {
-                        mm = '00';
+                    const now = new Date();
+                    const minuteOptions = [0, 10, 20, 30, 40, 50];
+
+                    let hour = now.getHours();
+                    let minute = now.getMinutes();
+
+                    let roundedMinute = minuteOptions.find(m => m >= minute);
+
+                    if (roundedMinute === undefined) {
+                        roundedMinute = 0;
+                        hour += 1;
+                        if (hour >= 24) {
+                            now.setDate(now.getDate() + 1);
+                            hour = 0;
+                        }
                     }
-                }
 
-                if (mm === '00' && now.getMinutes() > 50) {
-                    now.setHours(now.getHours() + 1);
-                }
+                    const yyyy = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const dd = String(now.getDate()).padStart(2, '0');
 
-                const yyyy = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const dd = String(now.getDate()).padStart(2, '0');
-                const finalHour = String(now.getHours()).padStart(2, '0');
-
-                $('#completed_date').val(`${yyyy}-${month}-${dd}`);
-                $('#completed_hour').val(finalHour);
-                $('#completed_minute').val(mm);
+                    $('#completed_date').val(`${yyyy}-${month}-${dd}`);
+                    $('#completed_hour').val(String(hour).padStart(2, '0'));
+                    $('#completed_minute').val(String(roundedMinute).padStart(2, '0'));
+                });
             });
-        });
-    </script>
+        </script>
+    @endpush
 @endpush
