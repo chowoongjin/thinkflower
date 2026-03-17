@@ -7,6 +7,31 @@
         </script>
     @endif
 
+    @php
+        $completedBase = $order->delivered_at ? \Carbon\Carbon::parse($order->delivered_at) : now();
+
+        $defaultCompletedDate = old('completed_date', $completedBase->format('Y-m-d'));
+        $defaultCompletedHour = old('completed_hour', $completedBase->format('H'));
+
+        $minuteUnits = ['00','10','20','30','40','50'];
+        $baseMinute = $completedBase->format('i');
+        $defaultCompletedMinute = old('completed_minute');
+
+        if (!$defaultCompletedMinute) {
+            $defaultCompletedMinute = '00';
+
+            foreach ($minuteUnits as $minute) {
+                if ((int) $minute >= (int) $baseMinute) {
+                    $defaultCompletedMinute = $minute;
+                    break;
+                }
+            }
+        }
+
+        $defaultReceiverName = old('receiver_name', $order->receiver_name);
+        $defaultReceiverRelation = old('receiver_relation', $order->receiver_relation);
+    @endphp
+
     <div id="popup">
         <div class="popup__head">
             <h1 class="popup-title">주문정보</h1>
@@ -57,14 +82,15 @@
                 </tbody>
             </table>
 
-            <form method="POST"
+            <form id="complete-store-form"
+                  method="POST"
                   action="{{ route('suju-list.complete-store', $order->order_no) }}"
                   enctype="multipart/form-data">
                 @csrf
 
                 <h3 class="mt20 fs16 mb10">
                     인수자 정보등록
-                    <span class="color-gray300 fs14 pl8">사진은 업로드 요청 후 잠시 뒤 반영됩니다.</span>
+                    <span class="color-gray300 fs14 pl8">사진은 업로드가 완료되면, 잠시 뒤 반영됩니다.</span>
                 </h3>
 
                 <div class="photoBoxWrap">
@@ -143,7 +169,7 @@
                                                    name="completed_date"
                                                    id="completed_date"
                                                    class="datepicker"
-                                                   value="{{ old('completed_date', now()->format('Y-m-d')) }}"
+                                                   value="{{ $defaultCompletedDate }}"
                                                    style="width:120px;">
                                         </div>
                                         <div class="col">
@@ -151,7 +177,7 @@
                                                 <option value="">시간선택</option>
                                                 @for ($i = 0; $i <= 23; $i++)
                                                     @php $hour = str_pad($i, 2, '0', STR_PAD_LEFT); @endphp
-                                                    <option value="{{ $hour }}" @selected(old('completed_hour', now()->format('H')) === $hour)>
+                                                    <option value="{{ $hour }}" @selected($defaultCompletedHour === $hour)>
                                                         {{ (int) $hour }}시
                                                     </option>
                                                 @endfor
@@ -160,7 +186,7 @@
                                         <div class="col">
                                             <select name="completed_minute" id="completed_minute" style="width:65px;">
                                                 @foreach (['00','10','20','30','40','50'] as $minute)
-                                                    <option value="{{ $minute }}" @selected(old('completed_minute', '00') === $minute)>
+                                                    <option value="{{ $minute }}" @selected($defaultCompletedMinute === $minute)>
                                                         {{ $minute }}분
                                                     </option>
                                                 @endforeach
@@ -175,12 +201,12 @@
                                     <div class="inline-flex">
                                         <input type="text"
                                                name="receiver_name"
-                                               value="{{ old('receiver_name') }}"
+                                               value="{{ $defaultReceiverName }}"
                                                placeholder="인수자 입력"
                                                style="min-width:295px">
                                         <input type="text"
                                                name="receiver_relation"
-                                               value="{{ old('receiver_relation') }}"
+                                               value="{{ $defaultReceiverRelation }}"
                                                placeholder="관계 입력"
                                                class="ml5">
                                     </div>
@@ -189,14 +215,15 @@
                             </tbody>
                         </table>
                     </div>
-
+                    <input type="hidden" name="return_url" value="{{ $returnUrl }}">
                     <div class="flex__col">
-                        <button type="submit" class="btn btn-primary">배송완료</button>
+                        <button type="submit" id="btn-complete-store" class="btn btn-primary">배송완료</button>
                     </div>
                 </section>
             </form>
         </div>
     </div>
+@include('partials.loading-modal')
 @endsection
 
 @push('styles')
@@ -231,6 +258,7 @@
     <script>
         $(function () {
             let uploadStatusPolling = null;
+            let completeSubmitting = false;
 
             function buildPreviewHtml(fieldName, imageUrl) {
                 const labelFor = fieldName;
@@ -321,6 +349,7 @@
                     processData: false,
                     contentType: false,
                     success: function (res) {
+                        closeLoadingModal();
                         if (res.message) {
                             alert(res.message);
                         }
@@ -332,6 +361,7 @@
                         }
                     },
                     error: function (xhr) {
+                        closeLoadingModal();
                         setUploadingState(fieldName, false);
 
                         const msg =
@@ -384,6 +414,26 @@
                 $('#completed_date').val(`${yyyy}-${month}-${dd}`);
                 $('#completed_hour').val(hh);
                 $('#completed_minute').val(mm);
+            });
+
+            $(document).on('submit', '#complete-store-form', function (e) {
+                if (completeSubmitting) {
+                    e.preventDefault();
+                    return;
+                }
+
+                const receiverName = $.trim($('input[name="receiver_name"]').val());
+                const completedDate = $.trim($('#completed_date').val());
+                const completedHour = $.trim($('#completed_hour').val());
+                const completedMinute = $.trim($('#completed_minute').val());
+
+                if (!completedDate || !completedHour || !completedMinute || !receiverName) {
+                    return;
+                }
+
+                completeSubmitting = true;
+                $('#btn-complete-store').prop('disabled', true).text('처리중...');
+                openLoadingModal();
             });
         });
     </script>

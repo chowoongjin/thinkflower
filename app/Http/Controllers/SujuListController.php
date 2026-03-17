@@ -115,7 +115,22 @@ class SujuListController extends Controller
         $shop = $request->user()?->shop;
 
         abort_unless($shop, 403);
-        abort_unless((int) $order->receiver_shop_id === (int) $shop->id, 403);
+
+        $popupState = null;
+
+        if ($request->query('popup_state') === 'rejected') {
+            $popupState = 'rejected';
+        } elseif ((int) $order->receiver_shop_id === (int) $shop->id) {
+            if ($order->current_status === 'delivered') {
+                $popupState = 'delivered';
+            } elseif ($order->current_status === 'accepted') {
+                $popupState = 'accepted';
+            } else {
+                $popupState = 'assigned';
+            }
+        } else {
+            abort(403);
+        }
 
         $order->load([
             'ordererShop',
@@ -125,6 +140,8 @@ class SujuListController extends Controller
         return view('pages.suju-popup', [
             'order' => $order,
             'title' => '주문정보',
+            'popupState' => $popupState,
+            'returnUrl' => $request->query('return_url'),
         ]);
     }
 
@@ -253,7 +270,7 @@ class SujuListController extends Controller
         return response()->view('pages.popup-action-result', [
             'message' => '주문이 거절되었습니다.',
             'redirectParentTo' => route('suju-list'),
-            'closeWindow' => true,
+            'redirectCurrentTo' => route('suju-list.popup', $order->order_no) . '?popup_state=rejected',
         ]);
     }
 
@@ -291,6 +308,7 @@ class SujuListController extends Controller
             'photoShop' => $photoShop,
             'photoSite' => $photoSite,
             'photoExtra' => $photoExtra,
+            'returnUrl' => $request->query('return_url'),
         ]);
     }
 
@@ -415,9 +433,9 @@ class SujuListController extends Controller
             }
         });
 
-        return redirect()
-            ->route('suju-list.complete-popup', $order->order_no)
-            ->with('success', '배송완료 처리되었습니다.');
+        return response()->view('pages.popup-complete-result', [
+            'message' => '상품 배송이 완료되었습니다.',
+        ]);
     }
 
     public function uploadPhoto(Request $request, Order $order)

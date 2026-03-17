@@ -70,11 +70,14 @@
                         </strong>
                     </div>
                     @php
-                        $actionLocked = $order->current_status === 'accepted' || $order->receiver_shop_id === null;
+                        $isAssigned = ($popupState ?? null) === 'assigned';
+                        $isAccepted = ($popupState ?? null) === 'accepted';
+                        $isRejected = ($popupState ?? null) === 'rejected';
+                        $isDelivered = ($popupState ?? null) === 'delivered';
                     @endphp
 
                     <div class="flex__col">
-                        @if (!$actionLocked)
+                        @if ($isAssigned)
                             <form method="POST" action="{{ route('suju-list.accept', $order) }}" style="display:inline-block;">
                                 @csrf
                                 <button
@@ -96,8 +99,28 @@
                                     주문을 거절합니다
                                 </button>
                             </form>
-                        @else
-                            <span class="color-gray900 fs15">처리 완료된 주문입니다.</span>
+                        @elseif ($isAccepted || $isDelivered)
+                            <button
+                                type="button"
+                                class="btn btn-purple"
+                            >
+                                주문을 접수합니다
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-complete-popup"
+                                data-popup-url="{{ route('suju-list.complete-popup', $order->order_no) }}"
+                            >
+                                배송완료처리
+                            </button>
+                        @elseif ($isRejected)
+                            <button
+                                type="button"
+                                class="btn btn-orange"
+                            >
+                                주문을 거절합니다
+                            </button>
                         @endif
                     </div>
                 </div>
@@ -321,6 +344,24 @@
 
             $(document).on('click', '#productImageModalImg', function () {
                 closeProductImageModal();
+            });
+            $(document).on('click', '.btn-complete-popup', function (e) {
+                e.preventDefault();
+
+                const url = $(this).data('popup-url');
+                if (!url) return;
+
+                const popup = window.open(
+                    url,
+                    'completePopup',
+                    'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
+
+                if (popup) {
+                    popup.sujuListReturnUrl =
+                        window.sujuListReturnUrl ||
+                        (window.opener && !window.opener.closed ? window.opener.location.href : '');
+                }
             });
         });
     </script>

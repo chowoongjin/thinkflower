@@ -101,16 +101,43 @@
         </td>
 
         <td>
-            @if($hasPhoto)
-                <a href="{{ route('suju-list.photo-popup', $order) }}"
-                   class="order-photo-popup-link"
-                   data-popup-url="{{ route('suju-list.photo-popup', $order) }}">
-                    <img src="{{ asset('assets/img/ico_photo_on.png') }}" height="18">
-                </a>
+            @php
+                $photoCount = (int) ($order->photos_count ?? 0);
+                $isDelivered = $order->current_status === 'delivered';
+            @endphp
+
+            @if($isDelivered)
+                @if($photoCount >= 3)
+                    <a href="{{ route('suju-list.photo-popup', $order) }}"
+                       class="order-photo-popup-link"
+                       data-popup-url="{{ route('suju-list.photo-popup', $order) }}">
+                        <img src="{{ asset('assets/img/ico_photo_on.png') }}" height="18">
+                    </a>
+                @elseif($photoCount >= 1)
+                    <button type="button"
+                            class="btn-photo-complete-popup"
+                            data-popup-url="{{ route('suju-list.complete-popup', $order->order_no) }}">
+                        <img src="{{ asset('assets/img/ico_photo_on.png') }}" height="18">
+                    </button>
+                @else
+                    <button type="button"
+                            class="btn-photo-complete-popup"
+                            data-popup-url="{{ route('suju-list.complete-popup', $order->order_no) }}">
+                        <img src="{{ asset('assets/img/ico_photo_off.png') }}" height="18">
+                    </button>
+                @endif
             @else
-                <button type="button">
-                    <img src="{{ asset('assets/img/ico_photo_off.png') }}" height="18">
-                </button>
+                @if($photoCount > 0)
+                    <a href="{{ route('suju-list.photo-popup', $order) }}"
+                       class="order-photo-popup-link"
+                       data-popup-url="{{ route('suju-list.photo-popup', $order) }}">
+                        <img src="{{ asset('assets/img/ico_photo_on.png') }}" height="18">
+                    </a>
+                @else
+                    <button type="button" disabled>
+                        <img src="{{ asset('assets/img/ico_photo_off.png') }}" height="18">
+                    </button>
+                @endif
             @endif
         </td>
 

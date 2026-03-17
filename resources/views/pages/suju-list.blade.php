@@ -185,11 +185,14 @@
                 const url = $(this).data('popup-url') || $(this).attr('href');
                 if (!url) return;
 
-                window.open(
+                const popup = window.open(
                     url,
                     'sujuPopup',
                     'width=1000,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
                 );
+                if (popup) {
+                    popup.sujuListReturnUrl = window.location.href;
+                }
             });
 
             $(document).on('click', '.btn-order-history-modal', function (e) {
@@ -249,6 +252,19 @@
 
                 window.open(
                     popupUrl,
+                    'completePopup',
+                    'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
+            });
+
+            $(document).on('click', '.btn-photo-complete-popup', function (e) {
+                e.preventDefault();
+
+                const url = $(this).data('popup-url');
+                if (!url) return;
+
+                window.open(
+                    url,
                     'completePopup',
                     'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
                 );
