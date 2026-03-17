@@ -1,15 +1,6 @@
 @extends('layouts.popup')
 
 @section('content')
-    @if (session('success'))
-        <script>
-            alert(@json(session('success')));
-
-            if (window.opener && !window.opener.closed) {
-                window.opener.location.reload();
-            }
-        </script>
-    @endif
     @if ($errors->any())
         <script>
             alert(@json($errors->first()));
@@ -73,55 +64,55 @@
 
                 <h3 class="mt20 fs16 mb10">
                     인수자 정보등록
-                    <span class="color-gray300 fs14 pl8">사진은 업로드 시 즉시 저장됩니다.</span>
+                    <span class="color-gray300 fs14 pl8">사진은 업로드 요청 후 잠시 뒤 반영됩니다.</span>
                 </h3>
 
                 <div class="photoBoxWrap">
-                    <div class="photoBox">
+                    <div class="photoBox" data-photo-field="photo_shop">
                         <h3>매장사진</h3>
                         <div class="photoBox__content">
-                            <input type="file" name="photo_shop" id="photo_shop" accept="image/*">
+                            <input type="file" name="photo_shop" id="photo_shop" accept="image/*,application/pdf">
 
                             @if(!empty($photoShop?->file_path))
-                                <label for="photo_shop">
+                                <label for="photo_shop" data-role="photo-preview">
                                     <img src="{{ $photoShop->file_path }}" alt="매장사진">
                                 </label>
                             @else
-                                <label for="photo_shop">
+                                <label for="photo_shop" data-role="photo-preview">
                                     <i class="bi bi-image"></i> 이미지 업로드
                                 </label>
                             @endif
                         </div>
                     </div>
 
-                    <div class="photoBox">
+                    <div class="photoBox" data-photo-field="photo_site">
                         <h3>현장사진</h3>
                         <div class="photoBox__content">
-                            <input type="file" name="photo_site" id="photo_site" accept="image/*">
+                            <input type="file" name="photo_site" id="photo_site" accept="image/*,application/pdf">
 
                             @if(!empty($photoSite?->file_path))
-                                <label for="photo_site">
+                                <label for="photo_site" data-role="photo-preview">
                                     <img src="{{ $photoSite->file_path }}" alt="현장사진">
                                 </label>
                             @else
-                                <label for="photo_site">
+                                <label for="photo_site" data-role="photo-preview">
                                     <i class="bi bi-image"></i> 이미지 업로드
                                 </label>
                             @endif
                         </div>
                     </div>
 
-                    <div class="photoBox">
+                    <div class="photoBox" data-photo-field="photo_extra">
                         <h3>추가사진</h3>
                         <div class="photoBox__content">
-                            <input type="file" name="photo_extra" id="photo_extra" accept="image/*">
+                            <input type="file" name="photo_extra" id="photo_extra" accept="image/*,application/pdf">
 
                             @if(!empty($photoExtra?->file_path))
-                                <label for="photo_extra">
+                                <label for="photo_extra" data-role="photo-preview">
                                     <img src="{{ $photoExtra->file_path }}" alt="추가사진">
                                 </label>
                             @else
-                                <label for="photo_extra">
+                                <label for="photo_extra" data-role="photo-preview">
                                     <i class="bi bi-image"></i> 이미지 업로드
                                 </label>
                             @endif
@@ -216,88 +207,184 @@
             object-fit: cover;
             display: block;
         }
+
+        .photoBox.is-uploading .photoBox__content {
+            position: relative;
+        }
+
+        .photoBox.is-uploading .photoBox__content::after {
+            content: '업로드 처리중...';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.82);
+            font-size: 13px;
+            color: #333;
+            z-index: 5;
+        }
     </style>
 @endpush
 
 @push('scripts')
-    @push('scripts')
-        <script>
-            $(function () {
-                function uploadCompletePhoto(fieldName, file) {
-                    const formData = new FormData();
-                    formData.append('_token', @json(csrf_token()));
-                    formData.append('photo_field', fieldName);
-                    formData.append('photo_file', file);
+    <script>
+        $(function () {
+            let uploadStatusPolling = null;
 
-                    $.ajax({
-                        url: @json(route('suju-list.upload-photo', $order->order_no)),
-                        type: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        success: function (res) {
-                            if (res.message) {
-                                alert(res.message);
-                            }
+            function buildPreviewHtml(fieldName, imageUrl) {
+                const labelFor = fieldName;
+                const altMap = {
+                    photo_shop: '매장사진',
+                    photo_site: '현장사진',
+                    photo_extra: '추가사진'
+                };
 
-                            if (res.reload_parent && window.opener && !window.opener.closed) {
-                                window.opener.location.reload();
-                            }
-
-                            if (res.reload) {
-                                window.location.reload();
-                            }
-                        },
-                        error: function (xhr) {
-                            const msg =
-                                xhr.responseJSON?.message ||
-                                xhr.responseJSON?.errors?.photo_file?.[0] ||
-                                xhr.responseJSON?.errors?.photo_field?.[0] ||
-                                '사진 업로드에 실패했습니다.';
-
-                            alert(msg);
-                        }
-                    });
+                if (imageUrl) {
+                    return `<label for="${labelFor}" data-role="photo-preview"><img src="${imageUrl}" alt="${altMap[fieldName] || '사진'}"></label>`;
                 }
 
-                $(document).on('change', '#photo_shop, #photo_site, #photo_extra', function () {
-                    const file = this.files && this.files[0] ? this.files[0] : null;
-                    if (!file) return;
+                return `<label for="${labelFor}" data-role="photo-preview"><i class="bi bi-image"></i> 이미지 업로드</label>`;
+            }
 
-                    uploadCompletePhoto(this.name, file);
-                });
+            function setUploadingState(fieldName, isUploading) {
+                const $box = $(`.photoBox[data-photo-field="${fieldName}"]`);
+                $box.toggleClass('is-uploading', isUploading);
+            }
 
-                $(document).on('change', '#completed_now', function () {
-                    if (!$(this).is(':checked')) {
-                        return;
+            function refreshPhotoPreview(fieldName, imageUrl) {
+                const $box = $(`.photoBox[data-photo-field="${fieldName}"]`);
+                $box.find('[data-role="photo-preview"]').replaceWith(buildPreviewHtml(fieldName, imageUrl));
+            }
+
+            function stopPollingIfIdle(pendingFields) {
+                if (!pendingFields || pendingFields.length === 0) {
+                    if (uploadStatusPolling) {
+                        clearInterval(uploadStatusPolling);
+                        uploadStatusPolling = null;
                     }
 
-                    const now = new Date();
-                    const minuteOptions = [0, 10, 20, 30, 40, 50];
+                    if (window.opener && !window.opener.closed) {
+                        window.opener.location.reload();
+                    }
+                }
+            }
 
-                    let hour = now.getHours();
-                    let minute = now.getMinutes();
-
-                    let roundedMinute = minuteOptions.find(m => m >= minute);
-
-                    if (roundedMinute === undefined) {
-                        roundedMinute = 0;
-                        hour += 1;
-                        if (hour >= 24) {
-                            now.setDate(now.getDate() + 1);
-                            hour = 0;
+            function pollUploadStatus() {
+                $.ajax({
+                    url: @json(route('suju-list.photo-upload-status', $order->order_no)),
+                    type: 'GET',
+                    success: function (res) {
+                        if (!res || !res.success) {
+                            return;
                         }
+
+                        refreshPhotoPreview('photo_shop', res.photos?.photo_shop || null);
+                        refreshPhotoPreview('photo_site', res.photos?.photo_site || null);
+                        refreshPhotoPreview('photo_extra', res.photos?.photo_extra || null);
+
+                        const pending = Array.isArray(res.pending_fields) ? res.pending_fields : [];
+
+                        ['photo_shop', 'photo_site', 'photo_extra'].forEach(function (field) {
+                            setUploadingState(field, pending.includes(field));
+                        });
+
+                        stopPollingIfIdle(pending);
+                    }
+                });
+            }
+
+            function startPolling() {
+                if (uploadStatusPolling) {
+                    return;
+                }
+
+                pollUploadStatus();
+
+                uploadStatusPolling = setInterval(function () {
+                    pollUploadStatus();
+                }, 2000);
+            }
+
+            function uploadCompletePhoto(fieldName, file) {
+                const formData = new FormData();
+                formData.append('_token', @json(csrf_token()));
+                formData.append('photo_field', fieldName);
+                formData.append('photo_file', file);
+
+                setUploadingState(fieldName, true);
+
+                $.ajax({
+                    url: @json(route('suju-list.upload-photo', $order->order_no)),
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.message) {
+                            alert(res.message);
+                        }
+
+                        if (res.queued) {
+                            startPolling();
+                        } else {
+                            setUploadingState(fieldName, false);
+                        }
+                    },
+                    error: function (xhr) {
+                        setUploadingState(fieldName, false);
+
+                        const msg =
+                            xhr.responseJSON?.message ||
+                            xhr.responseJSON?.errors?.photo_file?.[0] ||
+                            xhr.responseJSON?.errors?.photo_field?.[0] ||
+                            '사진 업로드에 실패했습니다.';
+
+                        alert(msg);
+                    }
+                });
+            }
+
+            $(document).on('change', '#photo_shop, #photo_site, #photo_extra', function () {
+                const file = this.files && this.files[0] ? this.files[0] : null;
+                if (!file) return;
+
+                uploadCompletePhoto(this.name, file);
+            });
+
+            $(document).on('change', '#completed_now', function () {
+                if (!$(this).is(':checked')) {
+                    return;
+                }
+
+                const now = new Date();
+                const mmList = ['00', '10', '20', '30', '40', '50'];
+                let mm = '00';
+
+                for (let i = 0; i < mmList.length; i++) {
+                    if (parseInt(mmList[i], 10) >= now.getMinutes()) {
+                        mm = mmList[i];
+                        break;
                     }
 
-                    const yyyy = now.getFullYear();
-                    const month = String(now.getMonth() + 1).padStart(2, '0');
-                    const dd = String(now.getDate()).padStart(2, '0');
+                    if (i === mmList.length - 1) {
+                        mm = '00';
+                    }
+                }
 
-                    $('#completed_date').val(`${yyyy}-${month}-${dd}`);
-                    $('#completed_hour').val(String(hour).padStart(2, '0'));
-                    $('#completed_minute').val(String(roundedMinute).padStart(2, '0'));
-                });
+                if (mm === '00' && now.getMinutes() > 50) {
+                    now.setHours(now.getHours() + 1);
+                }
+
+                const yyyy = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                const hh = String(now.getHours()).padStart(2, '0');
+
+                $('#completed_date').val(`${yyyy}-${month}-${dd}`);
+                $('#completed_hour').val(hh);
+                $('#completed_minute').val(mm);
             });
-        </script>
-    @endpush
+        });
+    </script>
 @endpush

@@ -68,6 +68,80 @@ class Cafe24FileUploadService
         }
     }
 
+    public function storeTempUpload(UploadedFile $file, string $type): array
+    {
+        $this->validateType($file, $type);
+
+        $originalMimeType = $file->getMimeType();
+        $originalName = $file->getClientOriginalName();
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'tmp');
+
+        $tempDir = storage_path('app/tmp_uploads/' . date('Y/m/d'));
+
+        if (!is_dir($tempDir) && !mkdir($tempDir, 0775, true) && !is_dir($tempDir)) {
+            throw new \RuntimeException('임시 업로드 디렉터리를 생성할 수 없습니다. path=' . $tempDir);
+        }
+
+        $tempFilename = Str::uuid()->toString() . '.' . $extension;
+        $storedFile = $file->move($tempDir, $tempFilename);
+
+        return [
+            'local_path' => $storedFile->getPathname(),
+            'original_name' => $originalName,
+            'original_mime_type' => $originalMimeType,
+        ];
+    }
+
+    public function uploadFromLocalPath(
+        string $localPath,
+        string $type,
+        ?string $originalName = null,
+        ?string $originalMimeType = null
+    ): array {
+        if (!is_file($localPath) || !is_readable($localPath)) {
+            throw new RuntimeException('업로드할 로컬 파일을 읽을 수 없습니다. path=' . $localPath);
+        }
+
+        $tmpOriginalPath = $localPath;
+        $tmpUploadPath = null;
+
+        $originalMimeType = $originalMimeType ?: mime_content_type($localPath) ?: 'application/octet-stream';
+        $originalExtension = strtolower(pathinfo($localPath, PATHINFO_EXTENSION) ?: 'tmp');
+        $originalName = $originalName ?: basename($localPath);
+        $isPdf = $originalMimeType === 'application/pdf';
+
+        try {
+            if ($isPdf) {
+                $tmpUploadPath = $this->convertPdfFirstPageToJpg($tmpOriginalPath);
+                $tmpUploadPath = $this->resizeImageIfNeeded($tmpUploadPath);
+                $extension = 'jpg';
+                $mimeType = 'image/jpeg';
+            } else {
+                $tmpUploadPath = $this->resizeImageIfNeeded($tmpOriginalPath);
+                $extension = $originalExtension;
+                $mimeType = $originalMimeType;
+            }
+
+            $remoteRelativePath = $this->buildRemotePath($type, $extension);
+            $this->uploadToFtp($tmpUploadPath, $remoteRelativePath);
+
+            return [
+                'disk' => 'cafe24',
+                'type' => $type,
+                'original_name' => $originalName,
+                'mime_type' => $mimeType,
+                'relative_path' => $remoteRelativePath,
+                'url' => $this->buildCdnUrl($remoteRelativePath),
+            ];
+        } finally {
+            $this->deleteLocalFile($tmpOriginalPath);
+
+            if ($tmpUploadPath && $tmpUploadPath !== $tmpOriginalPath) {
+                $this->deleteLocalFile($tmpUploadPath);
+            }
+        }
+    }
+
     protected function resizeImageIfNeeded(string $imagePath): string
     {
         if (!extension_loaded('imagick')) {

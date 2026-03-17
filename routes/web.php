@@ -85,6 +85,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/suju-list/{order:order_no}/complete-popup', [SujuListController::class, 'completePopup'])->name('suju-list.complete-popup');
     Route::post('/suju-list/{order:order_no}/complete', [SujuListController::class, 'completeStore'])->name('suju-list.complete-store');
     Route::post('/suju-list/{order:order_no}/upload-photo', [SujuListController::class, 'uploadPhoto'])->name('suju-list.upload-photo');
+    Route::get('/suju-list/{order:order_no}/photo-upload-status', [SujuListController::class, 'photoUploadStatus'])->name('suju-list.photo-upload-status');
     Route::get('/suju-list/{order}/photo-popup', [SujuListController::class, 'photoPopup'])->name('suju-list.photo-popup');
 
     Route::get('/calculate-list', [CalculateListController::class, 'index'])->name('calculate-list');

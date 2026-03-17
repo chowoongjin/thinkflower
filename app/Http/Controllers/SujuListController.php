@@ -14,6 +14,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Jobs\ProcessCafe24UploadJob;
+use App\Models\UploadTask;
 
 class SujuListController extends Controller
 {
@@ -428,10 +430,10 @@ class SujuListController extends Controller
 
         $validated = $request->validate([
             'photo_field' => ['required', 'in:photo_shop,photo_site,photo_extra'],
-            'photo_file' => ['required', 'file', 'mimetypes:image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml'],
+            'photo_file' => ['required', 'file', 'mimetypes:image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,application/pdf'],
         ], [
             'photo_file.required' => '업로드할 사진을 선택해 주세요.',
-            'photo_file.mimetypes' => '이미지 파일만 업로드할 수 있습니다.',
+            'photo_file.mimetypes' => '이미지 또는 PDF 파일만 업로드할 수 있습니다.',
         ]);
 
         $field = $validated['photo_field'];
@@ -444,54 +446,77 @@ class SujuListController extends Controller
 
         $meta = $metaMap[$field];
 
-        $uploaded = $this->uploadService->upload(
+        $temp = $this->uploadService->storeTempUpload(
             $request->file('photo_file'),
             Cafe24FileUploadService::TYPE_PHOTO_SHARE
         );
 
-        DB::transaction(function () use ($order, $user, $shop, $field, $meta, $uploaded) {
-            DB::table('order_photos')
-                ->where('order_id', $order->id)
-                ->where('photo_type', $meta['type'])
-                ->where('sort_order', $meta['sort'])
-                ->delete();
+        $task = UploadTask::create([
+            'task_type' => 'order_photo',
+            'upload_type' => Cafe24FileUploadService::TYPE_PHOTO_SHARE,
+            'status' => 'pending',
+            'local_path' => $temp['local_path'],
+            'original_name' => $temp['original_name'],
+            'original_mime_type' => $temp['original_mime_type'],
+            'order_id' => $order->id,
+            'shop_id' => $shop->id,
+            'user_id' => $user->id,
+            'photo_field' => $field,
+            'photo_type' => $meta['type'],
+            'sort_order' => $meta['sort'],
+        ]);
 
-            DB::table('order_photos')->insert([
-                'order_id' => $order->id,
-                'photo_type' => $meta['type'],
-                'file_path' => $uploaded['url'],
-                'sort_order' => $meta['sort'],
-                'uploaded_by_user_id' => $user->id,
-                'created_at' => now(),
-            ]);
-
-            $shopDisplayName = $this->makeShopDisplayName($shop);
-
-            $photoLabelMap = [
-                'photo_shop' => '매장사진',
-                'photo_site' => '현장사진',
-                'photo_extra' => '추가사진',
-            ];
-
-            $photoLabel = $photoLabelMap[$field] ?? '사진';
-
-            DB::table('order_histories')->insert([
-                'order_id' => $order->id,
-                'order_no' => $order->order_no,
-                'history_type' => 'updated',
-                'message' => '수주사 <strong>' . $shopDisplayName . '</strong> ' . $photoLabel . ' 업로드 완료',
-                'processed_at' => now(),
-                'actor_user_id' => $user->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        });
+        ProcessCafe24UploadJob::dispatch($task->id);
 
         return response()->json([
             'success' => true,
-            'message' => '사진이 업로드되었습니다.',
-            'reload' => true,
-            'reload_parent' => true,
+            'queued' => true,
+            'task_id' => $task->id,
+            'photo_field' => $field,
+            'message' => '성공적으로 사진 업로드가 되었습니다.',
+        ]);
+    }
+
+    public function photoUploadStatus(Request $request, Order $order)
+    {
+        $user = $request->user();
+        $shop = $user?->shop;
+
+        abort_unless($shop, 403);
+        abort_unless((int) $order->receiver_shop_id === (int) $shop->id, 403);
+
+        $photos = DB::table('order_photos')
+            ->where('order_id', $order->id)
+            ->orderBy('sort_order')
+            ->get();
+
+        $photoShop = $photos->first(function ($photo) {
+            return $photo->photo_type === 'other' && (int) $photo->sort_order === 1;
+        });
+
+        $photoSite = $photos->first(function ($photo) {
+            return $photo->photo_type === 'delivery_site';
+        });
+
+        $photoExtra = $photos->first(function ($photo) {
+            return $photo->photo_type === 'other' && (int) $photo->sort_order === 3;
+        });
+
+        $pendingTasks = UploadTask::query()
+            ->where('task_type', 'order_photo')
+            ->where('order_id', $order->id)
+            ->whereIn('status', ['pending', 'processing'])
+            ->pluck('photo_field')
+            ->all();
+
+        return response()->json([
+            'success' => true,
+            'photos' => [
+                'photo_shop' => $photoShop?->file_path,
+                'photo_site' => $photoSite?->file_path,
+                'photo_extra' => $photoExtra?->file_path,
+            ],
+            'pending_fields' => $pendingTasks,
         ]);
     }
 
