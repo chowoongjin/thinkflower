@@ -321,48 +321,51 @@
 @endpush
 
 @push('scripts')
-    <script>
-        $(function () {
-            function closeProductImageModal() {
-                $('#productImageModal').hide();
-                $('#productImageModalImg').attr('src', '');
-            }
-
-            $(document).on('click', '.js-open-product-image', function (e) {
-                e.preventDefault();
-
-                const imageUrl = $(this).data('image-url');
-                if (!imageUrl) return;
-
-                $('#productImageModalImg').attr('src', imageUrl);
-                $('#productImageModal').show();
-            });
-
-            $(document).on('click', '#productImageModal .product-image-modal__backdrop', function () {
-                closeProductImageModal();
-            });
-
-            $(document).on('click', '#productImageModalImg', function () {
-                closeProductImageModal();
-            });
-            $(document).on('click', '.btn-complete-popup', function (e) {
-                e.preventDefault();
-
-                const url = $(this).data('popup-url');
-                if (!url) return;
-
-                const popup = window.open(
-                    url,
-                    'completePopup',
-                    'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
-                );
-
-                if (popup) {
-                    popup.sujuListReturnUrl =
-                        window.sujuListReturnUrl ||
-                        (window.opener && !window.opener.closed ? window.opener.location.href : '');
+    @push('scripts')
+        <script>
+            $(function () {
+                function closeProductImageModal() {
+                    $('#productImageModal').hide();
+                    $('#productImageModalImg').attr('src', '');
                 }
+
+                $(document).on('click', '.js-open-product-image', function (e) {
+                    e.preventDefault();
+
+                    const imageUrl = $(this).data('image-url');
+                    if (!imageUrl) return;
+
+                    $('#productImageModalImg').attr('src', imageUrl);
+                    $('#productImageModal').show();
+                });
+
+                $(document).on('click', '#productImageModal .product-image-modal__backdrop', function () {
+                    closeProductImageModal();
+                });
+
+                $(document).on('click', '#productImageModalImg', function () {
+                    closeProductImageModal();
+                });
+
+                $(document).on('click', '.btn-complete-popup', function (e) {
+                    e.preventDefault();
+
+                    const url = $(this).data('popup-url');
+                    if (!url) return;
+
+                    const popup = window.open(
+                        url,
+                        'completePopup',
+                        'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                    );
+
+                    if (popup) {
+                        popup.sujuListReturnUrl =
+                            window.sujuListReturnUrl ||
+                            (window.opener && !window.opener.closed ? window.opener.location.href : '');
+                    }
+                });
             });
-        });
-    </script>
+        </script>
+    @endpush
 @endpush

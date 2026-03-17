@@ -2,21 +2,32 @@
 <html lang="ko">
 <head>
     <meta charset="utf-8">
-    <title>처리완료</title>
+    <title>처리결과</title>
 </head>
 <body>
 <script>
-    alert(@json($message));
+    alert(@json($message ?? '처리되었습니다.'));
 
-    @if (!empty($redirectParentTo))
-    if (window.opener && !window.opener.closed) {
-        window.opener.location.href = @json($redirectParentTo);
-    }
-    @endif
+    const returnUrl =
+        window.sujuListReturnUrl ||
+        (window.opener && window.opener.sujuListReturnUrl ? window.opener.sujuListReturnUrl : '') ||
+        (window.opener && !window.opener.closed ? window.opener.location.href : '');
 
-        @if (!empty($redirectCurrentTo))
+    try {
+        if (window.opener && !window.opener.closed) {
+            if (returnUrl && returnUrl.includes('/suju-list')) {
+                window.opener.location.href = returnUrl;
+            } else if (@json($redirectParentTo ?? null)) {
+                window.opener.location.href = @json($redirectParentTo ?? null);
+            } else {
+                window.opener.location.reload();
+            }
+        }
+    } catch (e) {}
+
+    @if(!empty($redirectCurrentTo))
         window.location.href = @json($redirectCurrentTo);
-    @elseif (!empty($closeWindow))
+    @elseif(!empty($closeWindow))
     window.close();
     @endif
 </script>

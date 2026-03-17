@@ -11,11 +11,12 @@
     const returnUrl =
         window.sujuListReturnUrl ||
         (window.opener && window.opener.sujuListReturnUrl ? window.opener.sujuListReturnUrl : '') ||
-        (window.opener && window.opener.opener && window.opener.opener.location ? window.opener.opener.location.href : '');
+        (window.opener && window.opener.opener && window.opener.opener.sujuListReturnUrl ? window.opener.opener.sujuListReturnUrl : '') ||
+        '';
 
     try {
         if (window.opener && window.opener.opener && !window.opener.opener.closed) {
-            if (returnUrl) {
+            if (returnUrl && returnUrl.includes('/suju-list')) {
                 window.opener.opener.location.href = returnUrl;
             } else {
                 window.opener.opener.location.reload();

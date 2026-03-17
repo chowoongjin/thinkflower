@@ -190,6 +190,7 @@
                     'sujuPopup',
                     'width=1000,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
                 );
+
                 if (popup) {
                     popup.sujuListReturnUrl = window.location.href;
                 }
@@ -250,24 +251,15 @@
 
                 if (!popupUrl) return;
 
-                window.open(
+                const popup = window.open(
                     popupUrl,
                     'completePopup',
                     'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
                 );
-            });
 
-            $(document).on('click', '.btn-photo-complete-popup', function (e) {
-                e.preventDefault();
-
-                const url = $(this).data('popup-url');
-                if (!url) return;
-
-                window.open(
-                    url,
-                    'completePopup',
-                    'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
-                );
+                if (popup) {
+                    popup.sujuListReturnUrl = window.location.href;
+                }
             });
         });
     </script>
