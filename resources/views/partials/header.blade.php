@@ -55,7 +55,7 @@
                 <div class="dropdown">
                     <button type="button">{{ $shopDisplayName }}<em>arrow</em></button>
                     <div class="dropdown-content">
-                        <a href="#none">마이페이지</a>
+                        <a href="{{ route('my-page.show') }}">마이페이지</a>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button id="btn_logout" type="submit">로그아웃</button>

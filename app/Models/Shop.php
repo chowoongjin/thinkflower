@@ -51,4 +51,19 @@ class Shop extends Model
     {
         return $this->hasMany(PointTransaction::class);
     }
+
+    public function handledProductCategories()
+    {
+        return $this->belongsToMany(
+            ProductCategory::class,
+            'shop_products',
+            'shop_id',
+            'product_category_id'
+        );
+    }
+
+    public function deliveryAreas()
+    {
+        return $this->hasMany(ShopDeliveryArea::class, 'shop_id');
+    }
 }

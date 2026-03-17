@@ -11,6 +11,7 @@ use App\Http\Controllers\CalculateListController;
 use App\Http\Controllers\PhotoListController;
 use App\Http\Controllers\Admin\RealTimeController;
 use App\Http\Controllers\Admin\AllOrderListController;
+use App\Http\Controllers\MyPageController;
 use App\Http\Controllers\Admin\HomeController as AdminHomeController;
 use App\Models\Notice;
 use Illuminate\Support\Facades\Route;
@@ -90,6 +91,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/calculate-list', [CalculateListController::class, 'index'])->name('calculate-list');
     Route::get('/photo-list', [PhotoListController::class, 'index'])->name('photo-list');
+
+    Route::get('/my-page', [MyPageController::class, 'show'])->name('my-page.show');
+    Route::get('/my-page/business-info-modal', [MyPageController::class, 'businessInfoModal'])->name('my-page.business-info-modal');
 
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 });
