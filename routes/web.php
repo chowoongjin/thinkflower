@@ -94,6 +94,11 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/my-page', [MyPageController::class, 'show'])->name('my-page.show');
     Route::get('/my-page/business-info-modal', [MyPageController::class, 'businessInfoModal'])->name('my-page.business-info-modal');
+    Route::post('/my-page/business-info', [MyPageController::class, 'updateBusinessInfo'])->name('my-page.business-info.update');
+    Route::get('/my-page/shop-info-modal', [MyPageController::class, 'shopInfoModal'])->name('my-page.shop-info-modal');
+    Route::post('/my-page/shop-info', [MyPageController::class, 'updateShopInfo'])->name('my-page.shop-info.update');
+    Route::get('/my-page/settlement-info-modal', [MyPageController::class, 'settlementInfoModal'])->name('my-page.settlement-info-modal');
+    Route::post('/my-page/settlement-info', [MyPageController::class, 'updateSettlementInfo'])->name('my-page.settlement-info.update');
 
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 });

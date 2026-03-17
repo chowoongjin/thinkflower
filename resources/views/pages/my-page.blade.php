@@ -36,7 +36,7 @@
         $businessLicenseUploaded = !empty($shop->business_license_file_path) || !empty($shop->business_license_file_url);
     @endphp
 
-    <div id="content__body" style="position:relative">
+    <div id="content__body">
         <div id="photoGallery">
             <section>
                 <h2 class="tt2">✔️ 마이페이지 조회/수정</h2>
@@ -91,7 +91,11 @@
                         <h3 class="tt3">매장운영 정보</h3>
                     </div>
                     <div class="flex__col">
-                        <button type="button" class="btn btn-gray2 btn-small" onclick="modal('');">매장운영정보 수정</button>
+                        <button type="button"
+                                class="btn btn-gray2 btn-small"
+                                onclick="modal('{{ route('my-page.shop-info-modal') }}');">
+                            매장운영정보 수정
+                        </button>
                     </div>
                 </div>
                 <table class="table-data style2-1 mt10">
@@ -144,7 +148,11 @@
                         <h3 class="tt3">정산 정보</h3>
                     </div>
                     <div class="flex__col">
-                        <button type="button" class="btn btn-gray2 btn-small" onclick="modal('');">정산 정보 수정</button>
+                        <button type="button"
+                                class="btn btn-gray2 btn-small"
+                                onclick="modal('{{ route('my-page.settlement-info-modal') }}');">
+                            정산 정보 수정
+                        </button>
                     </div>
                 </div>
                 <table class="table-data style2-1 mt10">
@@ -170,7 +178,5 @@
             </section>
         </div>
     </div>
-    <div id="modal">
-        <div id="ajax-modal"></div>
-    </div>
+
 @endsection
