@@ -42,8 +42,12 @@
                     <li class="{{ request()->routeIs('admin.all-order-list') ? 'active' : '' }}">
                         <a href="{{ route('admin.all-order-list') }}">전체수발주</a>
                     </li>
-                    <li><a href="#none">중개리스트</a></li>
-                    <li><a href="#none">공지사항관리</a></li>
+                    <li class="{{ request()->routeIs('admin.mediation-list') ? 'active' : '' }}">
+                        <a href="{{ route('admin.mediation-list') }}">중개리스트</a>
+                    </li>
+                    <li class="{{ request()->routeIs('admin.notice.index') ? 'active' : '' }}">
+                        <a href="{{ route('admin.notice.index') }}">공지사항관리</a>
+                    </li>
                     <li><a href="#none">정산관리</a></li>
                     <li><a href="#none">회원리스트</a></li>
                     <li><a href="#none">배너/팝업 관리</a></li>

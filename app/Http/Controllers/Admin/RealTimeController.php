@@ -322,6 +322,8 @@ class RealTimeController extends Controller
         $productFilter = trim((string) $request->input('product_filter', ''));
         $sido = trim((string) $request->input('sido', ''));
         $sigungu = trim((string) $request->input('sigungu', ''));
+        $popupSource = trim((string) $request->input('source', ''));
+        $orderId = $request->filled('order_id') ? (int) $request->input('order_id') : null;
 
         $regions = DB::table('regions')
             ->select('sido', 'sigungu')
@@ -422,7 +424,9 @@ class RealTimeController extends Controller
             'sido',
             'sigungu',
             'sidoOptions',
-            'sigunguOptions'
+            'sigunguOptions',
+            'popupSource',
+            'orderId'
         );
 
         if ($request->ajax()) {

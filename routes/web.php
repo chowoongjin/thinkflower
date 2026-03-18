@@ -12,6 +12,8 @@ use App\Http\Controllers\PhotoListController;
 use App\Http\Controllers\Admin\RealTimeController;
 use App\Http\Controllers\Admin\AllOrderListController;
 use App\Http\Controllers\MyPageController;
+use App\Http\Controllers\Admin\MediationListController;
+use App\Http\Controllers\Admin\NoticeController;
 use App\Http\Controllers\Admin\HomeController as AdminHomeController;
 use App\Models\Notice;
 use Illuminate\Support\Facades\Route;
@@ -123,4 +125,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/all-order-list/{order}/assign-receiver', [AllOrderListController::class, 'assignReceiver'])->name('all-order-list.assign-receiver');
     Route::post('/all-order-list/{order}/accept', [AllOrderListController::class, 'accept'])->name('all-order-list.accept');
     Route::post('/all-order-list/{order}/reset-brokerage', [AllOrderListController::class, 'resetBrokerage'])->name('all-order-list.reset-brokerage');
+
+    Route::get('/mediation-list', [MediationListController::class, 'index'])->name('mediation-list');
+    Route::get('/mediation-list/{order}/popup', [MediationListController::class, 'popup'])->name('mediation-list.popup');
+    Route::get('/mediation-list/{order}/receiver-popup', [MediationListController::class, 'receiverPopup'])->name('mediation-list.receiver-popup');
+    Route::post('/mediation-list/{order}/assign-receiver', [MediationListController::class, 'assignReceiver'])->name('mediation-list.assign-receiver');
+
+    Route::get('/notice', [NoticeController::class, 'index'])->name('notice.index');
+    Route::post('/notice', [NoticeController::class, 'store'])->name('notice.store');
 });

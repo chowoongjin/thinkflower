@@ -114,17 +114,17 @@
                         <img src="{{ asset('assets/img/ico_photo_on.png') }}" height="18">
                     </a>
                 @elseif($photoCount >= 1)
-                    <button type="button"
-                            class="btn-photo-complete-popup"
-                            data-popup-url="{{ route('suju-list.complete-popup', $order->order_no) }}">
+                    <a href="{{ route('suju-list.photo-popup', $order) }}"
+                       class="order-photo-popup-link"
+                       data-popup-url="{{ route('suju-list.complete-popup', $order) }}">
                         <img src="{{ asset('assets/img/ico_photo_on.png') }}" height="18">
-                    </button>
+                    </a>
                 @else
-                    <button type="button"
-                            class="btn-photo-complete-popup"
-                            data-popup-url="{{ route('suju-list.complete-popup', $order->order_no) }}">
+                    <a href="{{ route('suju-list.photo-popup', $order) }}"
+                       class="order-photo-popup-link"
+                       data-popup-url="{{ route('suju-list.complete-popup', $order) }}">
                         <img src="{{ asset('assets/img/ico_photo_off.png') }}" height="18">
-                    </button>
+                    </a>
                 @endif
             @else
                 @if($photoCount > 0)

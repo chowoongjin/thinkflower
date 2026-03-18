@@ -23,6 +23,8 @@
             <form id="member-search-form" method="GET" action="{{ route('admin.member-list-popup') }}">
                 <input type="hidden" name="target" value="{{ $target }}">
                 <input type="hidden" name="product_filter" id="product_filter" value="{{ $productFilter ?? '전체' }}">
+                <input type="hidden" name="source" value="{{ $popupSource ?? '' }}">
+                <input type="hidden" name="order_id" value="{{ $orderId ?? '' }}">
 
                 <div class="row">
                     <h2 class="fw600">상품필터</h2>
@@ -81,6 +83,15 @@
     </div>
 </div>
 
+<script>
+    window.memberPopupMeta = {
+        target: @json($target ?? 'receiver'),
+        popupSource: @json($popupSource ?? ''),
+        orderId: @json($orderId ?? null),
+        assignUrlTemplate: @json(route('admin.mediation-list.assign-receiver', ['order' => '__ORDER_ID__'])),
+        csrf: @json(csrf_token())
+    };
+</script>
 <script>
     $(function () {
         function loadMemberResult(url, data = {}) {
@@ -154,13 +165,60 @@
         });
 
         $(document).on("change", ".member-radio", function () {
-            const target = $(this).data("target");
-            const shopId = $(this).data("shop-id");
-            const shopDisplayName = $(this).data("shop-display-name");
+            const $radio = $(this);
+            const target = $radio.data("target");
+            const shopId = $radio.data("shop-id");
+            const shopDisplayName = $radio.data("shop-display-name");
+            const meta = window.memberPopupMeta || {};
 
+            // 중개리스트에서 연 수주사 선택 팝업 전용 처리
+            if (meta.popupSource === "mediation-list" && meta.orderId) {
+                if (!confirm('해당 수주사로 선택하시겠습니까?\n\n' + shopDisplayName)) {
+                    $radio.prop('checked', false);
+                    return;
+                }
+
+                const url = meta.assignUrlTemplate.replace('__ORDER_ID__', meta.orderId);
+
+                $.ajax({
+                    url: url,
+                    method: 'POST',
+                    data: {
+                        _token: meta.csrf,
+                        receiver_shop_id: shopId
+                    },
+                    success: function (res) {
+                        alert(res.message || '수주사가 선택되었습니다.');
+
+                        if (window.opener && !window.opener.closed) {
+                            if (window.opener.$ && window.opener.$('#mediation-list-filter-form').length) {
+                                window.opener.$('#mediation-list-filter-form').trigger('submit');
+                            } else {
+                                window.opener.location.reload();
+                            }
+                        }
+
+                        window.close();
+                    },
+                    error: function (xhr) {
+                        $radio.prop('checked', false);
+
+                        let message = '수주사 선택 처리 중 오류가 발생했습니다.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+
+                        alert(message);
+                    }
+                });
+
+                return;
+            }
+
+            // 기존 공용 팝업 처리
             if (target === "receiver2") {
                 if (!confirm('선택한 수주사로 지정하시겠습니까?\n확인을 누르시면 바로 수주사가 지정됩니다.')) {
-                    $(this).prop('checked', false);
+                    $radio.prop('checked', false);
                     return;
                 }
             }
@@ -173,18 +231,81 @@
                 }
 
                 if (target === "orderer") {
-                    window.opener.document.getElementById("orderer_shop_id").value = shopId;
-                    window.opener.document.getElementById("orderer_shop_name").value = shopDisplayName;
-                    window.opener.document.getElementById("orderer_is_hq").value = '0';
+                    const ordererShopId = window.opener.document.getElementById("orderer_shop_id");
+                    const ordererShopName = window.opener.document.getElementById("orderer_shop_name");
+                    const ordererIsHq = window.opener.document.getElementById("orderer_is_hq");
+
+                    if (ordererShopId) ordererShopId.value = shopId;
+                    if (ordererShopName) ordererShopName.value = shopDisplayName;
+                    if (ordererIsHq) ordererIsHq.value = '0';
                 } else {
-                    window.opener.document.getElementById("receiver_shop_id").value = shopId;
-                    window.opener.document.getElementById("receiver_shop_name").value = shopDisplayName;
-                    window.opener.document.getElementById("receiver_is_hq").value = '0';
+                    const receiverShopId = window.opener.document.getElementById("receiver_shop_id");
+                    const receiverShopName = window.opener.document.getElementById("receiver_shop_name");
+                    const receiverIsHq = window.opener.document.getElementById("receiver_is_hq");
+
+                    if (receiverShopId) receiverShopId.value = shopId;
+                    if (receiverShopName) receiverShopName.value = shopDisplayName;
+                    if (receiverIsHq) receiverIsHq.value = '0';
                 }
             }
 
             window.close();
         });
+
+        window.memberPopupMeta = {
+            target: @json($target ?? 'receiver'),
+            popupSource: @json($popupSource ?? ''),
+            orderId: @json($orderId ?? null),
+            assignUrlTemplate: @json(route('admin.mediation-list.assign-receiver', ['order' => '__ORDER_ID__'])),
+            csrf: @json(csrf_token()),
+        };
+
+        function assignReceiverFromMediation(shopId, shopName) {
+            const meta = window.memberPopupMeta || {};
+
+            if (meta.popupSource !== 'mediation-list' || !meta.orderId) {
+                return false;
+            }
+
+            if (!confirm('해당 수주사로 선택하겠습니까?\n\n[' + shopName + ']')) {
+                return false;
+            }
+
+            const url = meta.assignUrlTemplate.replace('__ORDER_ID__', meta.orderId);
+
+            $.ajax({
+                url: url,
+                method: 'POST',
+                data: {
+                    _token: meta.csrf,
+                    receiver_shop_id: shopId
+                },
+                success: function (res) {
+                    alert(res.message || '수주사가 선택되었습니다.');
+
+                    if (window.opener && !window.opener.closed) {
+                        if (typeof window.opener.refreshMediationListPreserveQuery === 'function') {
+                            window.opener.refreshMediationListPreserveQuery();
+                        } else {
+                            window.opener.location.href = window.opener.location.href;
+                        }
+                    }
+
+                    window.close();
+                },
+                error: function (xhr) {
+                    let message = '수주사 선택 처리 중 오류가 발생했습니다.';
+
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+
+                    alert(message);
+                }
+            });
+
+            return true;
+        }
     });
 </script>
 
