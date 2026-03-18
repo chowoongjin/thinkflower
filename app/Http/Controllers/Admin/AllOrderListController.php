@@ -6,12 +6,22 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Shop;
 use App\Models\OrderPhoto;
+use App\Models\OrderHistory;
+use App\Jobs\ProcessCafe24UploadJob;
+use App\Models\UploadTask;
+use App\Services\Cafe24FileUploadService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class AllOrderListController extends Controller
 {
+    protected Cafe24FileUploadService $uploadService;
+    public function __construct(Cafe24FileUploadService $uploadService)
+    {
+        $this->uploadService = $uploadService;
+    }
     public function index(Request $request)
     {
         $dateFrom = $request->filled('date_from')
@@ -330,5 +340,291 @@ class AllOrderListController extends Controller
             'success' => true,
             'message' => '중개대기로 변경되었습니다.',
         ]);
+    }
+
+    public function completePopup(Request $request, Order $order)
+    {
+        $user = $request->user();
+        abort_unless($user && in_array($user->role, ['admin', 'hq'], true), 403);
+
+        $order->load([
+            'ordererShop',
+            'receiverShop',
+        ]);
+
+        $photos = DB::table('order_photos')
+            ->where('order_id', $order->id)
+            ->orderBy('sort_order')
+            ->get();
+
+        $photoShop = $photos->first(function ($photo) {
+            return $photo->photo_type === 'other' && (int) $photo->sort_order === 1;
+        });
+
+        $photoSite = $photos->first(function ($photo) {
+            return $photo->photo_type === 'delivery_site';
+        });
+
+        $photoExtra = $photos->first(function ($photo) {
+            return $photo->photo_type === 'other' && (int) $photo->sort_order === 3;
+        });
+
+        return view('pages.suju-complete-popup', [
+            'order' => $order,
+            'photoShop' => $photoShop,
+            'photoSite' => $photoSite,
+            'photoExtra' => $photoExtra,
+            'returnUrl' => $request->query('return_url'),
+            'formAction' => route('admin.all-order-list.complete-store', $order->order_no),
+            'photoUploadUrl' => route('admin.all-order-list.upload-photo', $order->order_no),
+            'photoUploadStatusUrl' => route('admin.all-order-list.photo-upload-status', $order->order_no),
+        ]);
+    }
+
+    public function completeStore(Request $request, Order $order)
+    {
+        $user = $request->user();
+        abort_unless($user && in_array($user->role, ['admin', 'hq'], true), 403);
+
+        $validated = $request->validate([
+            'completed_date' => ['required', 'date'],
+            'completed_hour' => ['required', 'integer', 'between:0,23'],
+            'completed_minute' => ['required', 'in:00,10,20,30,40,50'],
+            'receiver_name' => ['required', 'string', 'max:100'],
+            'receiver_relation' => ['nullable', 'string', 'max:50'],
+        ], [
+            'completed_date.required' => '배송완료일을 입력해 주세요.',
+            'completed_hour.required' => '배송완료시간을 선택해 주세요.',
+            'completed_minute.required' => '배송완료분을 선택해 주세요.',
+            'receiver_name.required' => '인수자를 입력해 주세요.',
+        ]);
+
+        if ($order->current_status === 'delivered') {
+            throw ValidationException::withMessages([
+                'receiver_name' => '이미 배송완료 처리된 주문입니다.',
+            ]);
+        }
+
+        $deliveredAt = Carbon::createFromFormat(
+            'Y-m-d H:i:s',
+            $validated['completed_date'] . ' ' .
+            str_pad((string) $validated['completed_hour'], 2, '0', STR_PAD_LEFT) . ':' .
+            $validated['completed_minute'] . ':00'
+        );
+
+        DB::transaction(function () use ($order, $user, $validated, $deliveredAt) {
+            $lockedOrder = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if ($lockedOrder->current_status === 'delivered') {
+                throw ValidationException::withMessages([
+                    'receiver_name' => '이미 배송완료 처리된 주문입니다.',
+                ]);
+            }
+
+            $fromStatus = $lockedOrder->current_status;
+
+            $lockedOrder->update([
+                'current_status' => 'delivered',
+                'delivered_at' => $deliveredAt,
+                'receiver_name' => $validated['receiver_name'],
+                'receiver_relation' => $validated['receiver_relation'] ?? null,
+            ]);
+
+            $receiverShop = $lockedOrder->receiver_shop_id
+                ? Shop::where('id', $lockedOrder->receiver_shop_id)->lockForUpdate()->first()
+                : null;
+
+            OrderHistory::create([
+                'order_id' => $lockedOrder->id,
+                'order_no' => $lockedOrder->order_no,
+                'history_type' => 'delivered',
+                'message' => '수주사 <strong>' . $this->makeShopDisplayName($receiverShop) . '</strong> 인수정보 업로드 완료',
+                'processed_at' => now(),
+                'actor_user_id' => $user->id,
+            ]);
+
+            DB::table('order_status_logs')->insert([
+                'order_id' => $lockedOrder->id,
+                'from_status' => $fromStatus,
+                'to_status' => 'delivered',
+                'changed_by_user_id' => $user->id,
+                'memo' => '배송완료 및 인수정보 등록',
+                'created_at' => now(),
+            ]);
+
+            $pointAmount = (int) $lockedOrder->point_earned_amount;
+
+            if ($pointAmount <= 0) {
+                $pointAmount = (int) $lockedOrder->order_amount;
+
+                if ($pointAmount > 0) {
+                    $lockedOrder->update([
+                        'point_earned_amount' => $pointAmount,
+                    ]);
+                }
+            }
+
+            if ($receiverShop && $pointAmount > 0) {
+                $alreadyCredited = DB::table('point_transactions')
+                    ->where('order_id', $lockedOrder->id)
+                    ->where('shop_id', $receiverShop->id)
+                    ->where('transaction_type', 'order_credit')
+                    ->exists();
+
+                if (!$alreadyCredited) {
+                    $beforeBalance = (int) $receiverShop->current_point_balance;
+                    $afterBalance = $beforeBalance + $pointAmount;
+
+                    $receiverShop->update([
+                        'current_point_balance' => $afterBalance,
+                    ]);
+
+                    DB::table('point_transactions')->insert([
+                        'shop_id' => $receiverShop->id,
+                        'user_id' => $user->id,
+                        'order_id' => $lockedOrder->id,
+                        'payment_transaction_id' => null,
+                        'transaction_no' => $this->generatePointTransactionNo(),
+                        'transaction_type' => 'order_credit',
+                        'direction' => 'in',
+                        'amount' => $pointAmount,
+                        'balance_before' => $beforeBalance,
+                        'balance_after' => $afterBalance,
+                        'summary' => '배송완료 포인트 적립',
+                        'description' => '주문번호 ' . $lockedOrder->order_no . ' 배송완료 처리',
+                        'transacted_at' => now(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+        });
+
+        return response()->view('pages.popup-complete-result', [
+            'message' => '상품 배송이 완료되었습니다.',
+            'redirectParentTo' => route('admin.all-order-list'),
+            'redirectCurrentTo' => route('admin.all-order-list.popup', $order->order_no),
+        ]);
+    }
+
+    public function uploadPhoto(Request $request, Order $order)
+    {
+        $user = $request->user();
+        abort_unless($user && in_array($user->role, ['admin', 'hq'], true), 403);
+
+        $validated = $request->validate([
+            'photo_field' => ['required', 'in:photo_shop,photo_site,photo_extra'],
+            'photo_file' => ['required', 'file', 'mimetypes:image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,application/pdf'],
+        ], [
+            'photo_file.required' => '업로드할 사진을 선택해 주세요.',
+            'photo_file.mimetypes' => '이미지 또는 PDF 파일만 업로드할 수 있습니다.',
+        ]);
+
+        $field = $validated['photo_field'];
+
+        $metaMap = [
+            'photo_shop' => ['type' => 'other', 'sort' => 1],
+            'photo_site' => ['type' => 'delivery_site', 'sort' => 2],
+            'photo_extra' => ['type' => 'other', 'sort' => 3],
+        ];
+
+        $meta = $metaMap[$field];
+
+        $temp = $this->uploadService->storeTempUpload(
+            $request->file('photo_file'),
+            Cafe24FileUploadService::TYPE_PHOTO_SHARE
+        );
+
+        $task = UploadTask::create([
+            'task_type' => 'order_photo',
+            'upload_type' => Cafe24FileUploadService::TYPE_PHOTO_SHARE,
+            'status' => 'pending',
+            'local_path' => $temp['local_path'],
+            'original_name' => $temp['original_name'],
+            'original_mime_type' => $temp['original_mime_type'],
+            'order_id' => $order->id,
+            'shop_id' => $order->receiver_shop_id,
+            'user_id' => $user->id,
+            'photo_field' => $field,
+            'photo_type' => $meta['type'],
+            'sort_order' => $meta['sort'],
+        ]);
+
+        ProcessCafe24UploadJob::dispatch($task->id);
+
+        return response()->json([
+            'success' => true,
+            'queued' => true,
+            'task_id' => $task->id,
+            'photo_field' => $field,
+            'message' => '성공적으로 사진 업로드가 되었습니다.',
+        ]);
+    }
+
+    public function photoUploadStatus(Request $request, Order $order)
+    {
+        $user = $request->user();
+        abort_unless($user && in_array($user->role, ['admin', 'hq'], true), 403);
+
+        $photos = DB::table('order_photos')
+            ->where('order_id', $order->id)
+            ->orderBy('sort_order')
+            ->get();
+
+        $photoShop = $photos->first(function ($photo) {
+            return $photo->photo_type === 'other' && (int) $photo->sort_order === 1;
+        });
+
+        $photoSite = $photos->first(function ($photo) {
+            return $photo->photo_type === 'delivery_site';
+        });
+
+        $photoExtra = $photos->first(function ($photo) {
+            return $photo->photo_type === 'other' && (int) $photo->sort_order === 3;
+        });
+
+        $pendingTasks = UploadTask::query()
+            ->where('task_type', 'order_photo')
+            ->where('order_id', $order->id)
+            ->whereIn('status', ['pending', 'processing'])
+            ->pluck('photo_field')
+            ->all();
+
+        return response()->json([
+            'success' => true,
+            'photos' => [
+                'photo_shop' => $photoShop?->file_path,
+                'photo_site' => $photoSite?->file_path,
+                'photo_extra' => $photoExtra?->file_path,
+            ],
+            'pending_fields' => $pendingTasks,
+        ]);
+    }
+    protected function makeShopDisplayName(?Shop $shop): string
+    {
+        if (!$shop) {
+            return '미지정 화원';
+        }
+
+        if ((int) $shop->id === 1) {
+            return '본부 수발주사업부';
+        }
+
+        $regionLabel = DB::table('shop_delivery_areas')
+            ->join('regions', 'shop_delivery_areas.region_id', '=', 'regions.id')
+            ->where('shop_delivery_areas.shop_id', $shop->id)
+            ->orderBy('shop_delivery_areas.id')
+            ->value('regions.sido');
+
+        return $shop->shop_name . ($regionLabel ? ' (' . $regionLabel . ')' : '');
+    }
+
+    protected function generatePointTransactionNo(): string
+    {
+        do {
+            $transactionNo = 'PT' . now()->format('YmdHis') . str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+        } while (DB::table('point_transactions')->where('transaction_no', $transactionNo)->exists());
+
+        return $transactionNo;
     }
 }

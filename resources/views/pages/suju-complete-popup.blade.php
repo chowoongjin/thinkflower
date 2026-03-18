@@ -84,7 +84,7 @@
 
             <form id="complete-store-form"
                   method="POST"
-                  action="{{ route('suju-list.complete-store', $order->order_no) }}"
+                  action="{{ $formAction ?? route('suju-list.complete-store', $order->order_no) }}"
                   enctype="multipart/form-data">
                 @csrf
 
@@ -257,6 +257,9 @@
 @push('scripts')
     <script>
         $(function () {
+            const uploadUrl = @json($photoUploadUrl ?? route('suju-list.upload-photo', $order->order_no));
+            const statusUrl = @json($photoUploadStatusUrl ?? route('suju-list.photo-upload-status', $order->order_no));
+
             let uploadStatusPolling = null;
             let completeSubmitting = false;
 
@@ -300,7 +303,7 @@
 
             function pollUploadStatus() {
                 $.ajax({
-                    url: @json(route('suju-list.photo-upload-status', $order->order_no)),
+                    url: statusUrl,
                     type: 'GET',
                     success: function (res) {
                         if (!res || !res.success) {
@@ -343,7 +346,7 @@
                 setUploadingState(fieldName, true);
 
                 $.ajax({
-                    url: @json(route('suju-list.upload-photo', $order->order_no)),
+                    url: uploadUrl,
                     type: 'POST',
                     data: formData,
                     processData: false,

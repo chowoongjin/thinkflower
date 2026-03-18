@@ -128,9 +128,20 @@
         </td>
         <td class="fs13">
             @if ($order->current_status === 'delivered')
-                현장배치
+                {{ $order->receiver_name ?: '-' }}
+            @elseif (!empty($order->receiver_shop_id) && (int) $order->receiver_shop_id !== 0 && $order->current_status === 'accepted')
+                <button
+                    type="button"
+                    class="btn btn-orange btn-complete-popup"
+                    data-complete-url="{{ route('admin.all-order-list.complete-popup', [
+                        'order' => $order->order_no,
+                        'return_url' => request()->fullUrl(),
+                    ]) }}"
+                >
+                    등록
+                </button>
             @else
-                <button type="button" class="btn btn-orange">등록</button>
+                <button type="button" class="btn btn-orange" disabled>등록</button>
             @endif
         </td>
     </tr>

@@ -128,6 +128,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/all-order-list/{order}/assign-receiver', [AllOrderListController::class, 'assignReceiver'])->name('all-order-list.assign-receiver');
     Route::post('/all-order-list/{order}/accept', [AllOrderListController::class, 'accept'])->name('all-order-list.accept');
     Route::post('/all-order-list/{order}/reset-brokerage', [AllOrderListController::class, 'resetBrokerage'])->name('all-order-list.reset-brokerage');
+    Route::get('/all-order-list/{order:order_no}/complete-popup', [AllOrderListController::class, 'completePopup'])->name('all-order-list.complete-popup');
+    Route::post('/all-order-list/{order:order_no}/complete', [AllOrderListController::class, 'completeStore'])->name('all-order-list.complete-store');
+    Route::post('/all-order-list/{order:order_no}/upload-photo', [AllOrderListController::class, 'uploadPhoto'])->name('all-order-list.upload-photo');
+    Route::get('/all-order-list/{order:order_no}/photo-upload-status', [AllOrderListController::class, 'photoUploadStatus'])->name('all-order-list.photo-upload-status');
 
     Route::get('/mediation-list', [MediationListController::class, 'index'])->name('mediation-list');
     Route::get('/mediation-list/{order}/popup', [MediationListController::class, 'popup'])->name('mediation-list.popup');

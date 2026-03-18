@@ -204,6 +204,18 @@
                     'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
                 );
             });
+            $(document).on('click', '.btn-complete-popup', function (e) {
+                e.preventDefault();
+
+                const url = $(this).data('complete-url');
+                if (!url) return;
+
+                window.open(
+                    url,
+                    'completePopup',
+                    'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
+            });
         });
     </script>
 @endsection

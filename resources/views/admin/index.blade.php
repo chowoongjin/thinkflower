@@ -266,11 +266,22 @@
                             <?php endif; ?>
                         </td>
                         <td class="fs13">
-                                <?php if ($order->current_status === 'delivered'): ?>
-                            현장배치
-                            <?php else: ?>
-                            <button type="button" class="btn btn-orange">등록</button>
-                            <?php endif; ?>
+                            @if ($order->current_status === 'delivered')
+                                {{ $order->receiver_name ?: '-' }}
+                            @elseif (!empty($order->receiver_shop_id) && (int) $order->receiver_shop_id !== 0 && $order->current_status === 'accepted')
+                                <button
+                                    type="button"
+                                    class="btn btn-orange btn-complete-popup"
+                                    data-complete-url="{{ route('admin.all-order-list.complete-popup', [
+                                        'order' => $order->order_no,
+                                        'return_url' => request()->fullUrl(),
+                                    ]) }}"
+                                >
+                                    등록
+                                </button>
+                            @else
+                                <button type="button" class="btn btn-orange" disabled>등록</button>
+                            @endif
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -460,11 +471,22 @@
                             <?php endif; ?>
                         </td>
                         <td class="fs13">
-                                <?php if ($order->current_status === 'delivered'): ?>
-                            현장배치
-                            <?php else: ?>
-                            <button type="button" class="btn btn-orange">등록</button>
-                            <?php endif; ?>
+                            @if ($order->current_status === 'delivered')
+                                {{ $order->receiver_name ?: '-' }}
+                            @elseif (!empty($order->receiver_shop_id) && (int) $order->receiver_shop_id !== 0 && $order->current_status === 'accepted')
+                                <button
+                                    type="button"
+                                    class="btn btn-orange btn-complete-popup"
+                                    data-complete-url="{{ route('admin.all-order-list.complete-popup', [
+                                        'order' => $order->order_no,
+                                        'return_url' => request()->fullUrl(),
+                                    ]) }}"
+                                >
+                                    등록
+                                </button>
+                            @else
+                                <button type="button" class="btn btn-orange" disabled>등록</button>
+                            @endif
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -531,6 +553,19 @@
                     $('#modal, body').removeClass('active');
                     $('#ajax-modal').empty();
                 }
+            });
+
+            $(document).on('click', '.btn-complete-popup', function (e) {
+                e.preventDefault();
+
+                const url = $(this).data('complete-url');
+                if (!url) return;
+
+                window.open(
+                    url,
+                    'completePopup',
+                    'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
             });
         });
     </script>
