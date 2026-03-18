@@ -48,9 +48,15 @@
                     <li class="{{ request()->routeIs('admin.notice.index') ? 'active' : '' }}">
                         <a href="{{ route('admin.notice.index') }}">공지사항관리</a>
                     </li>
-                    <li><a href="#none">정산관리</a></li>
-                    <li><a href="#none">회원리스트</a></li>
-                    <li><a href="#none">배너/팝업 관리</a></li>
+                    <li class="{{ request()->routeIs('admin.calculate-list') ? 'active' : '' }}">
+                        <a href="{{ route('admin.calculate-list') }}">정산관리</a>
+                    </li>
+                    <li class="{{ request()->routeIs('admin.member-list') ? 'active' : '' }}">
+                        <a href="{{ route('admin.member-list') }}">회원리스트</a>
+                    </li>
+                    <li class="{{ request()->routeIs('admin.banner-set.index') ? 'active' : '' }}">
+                        <a href="{{ route('admin.banner-set.index') }}">배너/팝업 관리</a>
+                    </li>
                     <li><a href="#none">마케팅 관리</a></li>
                 </ul>
             </nav>

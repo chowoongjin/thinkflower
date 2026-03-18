@@ -13,7 +13,7 @@
                                 중개대기 발주건
                             </div>
                             <div class="flex__col">
-                                <strong>3,655,600원</strong>
+                                <strong>{{ number_format($mediationPendingAmount) }}원</strong>
                             </div>
                         </div>
                     </div>
@@ -22,10 +22,10 @@
                     <div class="box --green">
                         <div class="flex">
                             <div class="flex__col">
-                                2026년 02월 수주금액
+                                {{ $dashboardMonthLabel }} 수주금액
                             </div>
                             <div class="flex__col">
-                                <strong>6,142,600원</strong>
+                                <strong>{{ number_format($monthlyReceivedAmount) }}원</strong>
                             </div>
                         </div>
                     </div>
@@ -34,10 +34,10 @@
                     <div class="box --green">
                         <div class="flex">
                             <div class="flex__col">
-                                2026년 02월 이용료
+                                {{ $dashboardMonthLabel }} 이용료
                             </div>
                             <div class="flex__col">
-                                <strong>2,420,000원</strong>
+                                <strong>{{ number_format($monthlyUsageFeeAmount) }}원</strong>
                             </div>
                         </div>
                     </div>
@@ -45,16 +45,13 @@
             </ul>
         </section>
 
-
-
-        <!-- 중개가 필요한 발주건 -->
         <section class="row mt40">
             <div class="flex">
                 <div class="flex__col">
-                    <h2 class="tt">✔️ 중개가 필요한 발주건 <span class="color-orange pl10">3건</span></h2>
+                    <h2 class="tt">✔️ 중개가 필요한 발주건 <span class="color-orange pl10">{{ number_format($mediationDashboardCount) }}건</span></h2>
                 </div>
                 <div class="flex__col">
-                    <a href="#none" class="fs15 color-8c8c8c">전체보기</a>
+                    <a href="{{ route('admin.mediation-list') }}" class="fs15 color-8c8c8c">전체보기</a>
                 </div>
             </div>
 
@@ -84,31 +81,20 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr class="tr-primary">
-                        <td class="no-ellipsis"><span class="color-blue">23456</span></td>
-                        <td><span class="color-gray300">2025/07/04 11:30</span><br>2025/07/05 <span class="color-orange">18:00</span></td>
-                        <td><span class="color-gray300">메이플라워(대구)</span><br>드라이플라워(울산)</td>
-                        <td><span class="color-gray300">회계법인 더함 공인회계사...</span><br>울산광역시 동구 방어진순환...</td>
-                        <td>한도현</td>
-                        <td><span class="color-gray300">관엽식물</span><br><b class="color-green">해피트리 바닥용</b></td>
-                        <td>100,000원<br><b class="color-green">80,000원</b></td>
-                        <td class="align-center">
-                            <button type="button" class="btn btn-orange --outline h32">수주사 선택</button>
-                        </td>
-                    </tr>
+                    @php($orders = $mediationDashboardOrders)
+                    @include('admin.partials.mediation-list-table-rows')
                     </tbody>
                 </table>
             </div>
         </section>
 
-        <!-- 최근 수주리스트 -->
         <section class="row mt40">
             <div class="flex">
                 <div class="flex__col">
-                    <h2 class="tt">✔️ 배송체크 필요한 당일 수주건 <span class="color-orange pl10">3건</span></h2>
+                    <h2 class="tt">✔️ 배송체크 필요한 당일 수주건 <span class="color-orange pl10">{{ number_format($todayCheckCount) }}건</span></h2>
                 </div>
                 <div class="flex__col">
-                    <a href="#none" class="fs15 color-8c8c8c">전체보기</a>
+                    <a href="{{ route('admin.all-order-list')}}" class="fs15 color-8c8c8c">전체보기</a>
                 </div>
             </div>
 
@@ -144,38 +130,163 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr class="tr-warning">
-                        <td class="no-ellipsis"><span class="color-blue">23456</span></td>
-                        <td><span class="color-gray300">2025/07/04 11:30</span><br>2025/07/05 <span class="color-orange">지금즉시</span></td>
-                        <td><span class="color-gray300">메이플라워(대구)</span><br>드라이플라워(울산)</td>
-                        <td><span class="color-gray300">회계법인 더함 공인회계사...</span><br>울산광역시 동구 방어진순환...</td>
-                        <td>한도현</td>
-                        <td><span class="color-gray300">관엽식물</span><br><b class="color-green">해피트리 바닥용</b></td>
-                        <td>100,000원<br><b class="color-green">80,000원</b></td>
+                    <?php if ($todayCheckOrders->isEmpty()): ?>
+                    <tr>
+                        <td colspan="11" class="align-center">주문 내역이 없습니다.</td>
+                    </tr>
+                    <?php else: ?>
+                        <?php foreach ($todayCheckOrders as $order): ?>
+                        <?php
+                        $today = now()->format('Y-m-d');
+                        $deliveryDate = $order->delivery_date ? \Carbon\Carbon::parse($order->delivery_date)->format('Y-m-d') : null;
+
+                        $trClass = '';
+                        if ($order->current_status === 'delivered') {
+                            $trClass = '';
+                        } elseif ($deliveryDate) {
+                            if ($deliveryDate > $today) {
+                                $trClass = 'tr-primary';
+                            } elseif ($deliveryDate === $today) {
+                                $trClass = 'tr-warning';
+                            }
+                        }
+
+                        $statusSelectClass = '';
+                        if ($order->current_status === 'delivered') {
+                            $statusSelectClass = 'success';
+                        } elseif ($order->current_status !== 'accepted') {
+                            $statusSelectClass = 'active';
+                        }
+
+                        if ($order->current_status === 'delivered') {
+                            $statusLabel = '배송완료';
+                        } elseif ($order->current_status === 'accepted' && $order->accepted_by_type === 'admin') {
+                            $statusLabel = '본부접수';
+                        } elseif ($order->current_status === 'accepted' && $order->accepted_by_type === 'shop') {
+                            $statusLabel = '주문접수';
+                        } else {
+                            $statusLabel = '중개필요';
+                        }
+
+                        $receiverName = $order->receiverShop->shop_name ?? '본부수발주사업부';
+                        $ordererName = $order->ordererShop->shop_name ?? '-';
+                        $hasPhoto = ($order->photos_count ?? 0) > 0;
+
+                        $deliveryDateText = '-';
+                        $deliveryTimeText = '-';
+
+                        if ($order->delivery_date) {
+                            $deliveryDateCarbon = \Carbon\Carbon::parse($order->delivery_date);
+                            $deliveryDateText = $deliveryDateCarbon->format('Y/m/d');
+
+                            if ($order->delivery_hour !== null && $order->delivery_minute !== null) {
+                                $deliveryAt = \Carbon\Carbon::create(
+                                    $deliveryDateCarbon->year,
+                                    $deliveryDateCarbon->month,
+                                    $deliveryDateCarbon->day,
+                                    (int) $order->delivery_hour,
+                                    (int) $order->delivery_minute,
+                                    0
+                                );
+
+                                $nowTime = now();
+                                $threeHoursLater = $nowTime->copy()->addHours(3);
+
+                                if ($deliveryAt->lte($threeHoursLater)) {
+                                    $deliveryTimeText = '지금즉시';
+                                } else {
+                                    $deliveryTimeText = $deliveryAt->format('H:i');
+                                }
+                            }
+                        }
+                        ?>
+
+                    <tr class="{{ $trClass }}">
+                        <td class="no-ellipsis">
+                            <button
+                                type="button"
+                                class="btn-order-popup"
+                                data-popup-url="{{ route('admin.all-order-list.popup', $order) }}"
+                            >
+                                <span class="color-blue">{{ $order->order_no }}</span>
+                            </button>
+                        </td>
                         <td>
-                            <select name="" class="select">
-                                <option>본부접수</option>
+                            <span class="color-gray300">{{ optional($order->created_at)->format('Y/m/d H:i') }}</span><br>
+                            {{ $deliveryDateText }}
+                            <span class="color-orange">{{ $deliveryTimeText }}</span>
+                        </td>
+                        <td>
+                            <span class="color-gray300">{{ $receiverName }}</span><br>
+                            {{ $ordererName }}
+                        </td>
+                        <td>
+                            <span class="color-gray300">{{ \Illuminate\Support\Str::limit($order->sender_name ?? '-', 20) }}</span><br>
+                            {{ \Illuminate\Support\Str::limit($order->delivery_addr1 ?? '-', 25) }}
+                        </td>
+                        <td>{{ $order->recipient_name }}</td>
+                        <td>
+                            <span class="color-gray300">{{ $order->product_name }}</span><br>
+                            <b class="color-green">{{ $order->product_detail }}</b>
+                        </td>
+                        <td>
+                            {{ number_format((int) $order->original_amount) }}원<br>
+                            <b class="color-green">{{ number_format((int) $order->order_amount) }}원</b>
+                        </td>
+                        <td>
+                            <select name="" class="select {{ $statusSelectClass }}">
+                                <option {{ $statusLabel === '주문접수' ? 'selected' : '' }}>주문접수</option>
+                                <option {{ $statusLabel === '본부접수' ? 'selected' : '' }}>본부접수</option>
+                                <option {{ $statusLabel === '중개필요' ? 'selected' : '' }}>중개필요</option>
+                                <option {{ $statusLabel === '배송완료' ? 'selected' : '' }}>배송완료</option>
                             </select>
                         </td>
-                        <td><button type="button"><img src="{{ asset('adm/assets/img/ico_doc.png') }}" height="18"></button></td>
-                        <td><button type="button"><img src="{{ asset('adm/assets/img/ico_photo_off.png') }}" height="18"></button></td>
+                        <td>
+                            <button
+                                type="button"
+                                class="btn-order-history-modal"
+                                data-history-url="{{ route('admin.all-order-list.history-modal', $order) }}"
+                            >
+                                <img src="{{ asset('adm/assets/img/ico_doc.png') }}" height="18">
+                            </button>
+                        </td>
+                        <td>
+                                <?php if ($hasPhoto): ?>
+                            <button
+                                type="button"
+                                class="btn-photo-popup"
+                                data-photo-url="{{ route('admin.all-order-list.photo-popup', $order) }}"
+                            >
+                                <img src="{{ asset('adm/assets/img/ico_photo_on.png') }}" height="18">
+                            </button>
+                            <?php else: ?>
+                            <button type="button" disabled>
+                                <img src="{{ asset('adm/assets/img/ico_photo_off.png') }}" height="18">
+                            </button>
+                            <?php endif; ?>
+                        </td>
                         <td class="fs13">
+                                <?php if ($order->current_status === 'delivered'): ?>
+                            현장배치
+                            <?php else: ?>
                             <button type="button" class="btn btn-orange">등록</button>
+                            <?php endif; ?>
                         </td>
                     </tr>
+                    <?php endforeach; ?>
+                    <?php endif; ?>
                     </tbody>
                 </table>
             </div>
         </section>
 
-        <!-- 전체 발주 리스트 -->
         <section class="row mt40">
             <div class="flex">
                 <div class="flex__col">
                     <h2 class="tt">✔️ 전체 수발주 리스트</h2>
                 </div>
                 <div class="flex__col">
-                    <a href="#none" class="fs15 color-8c8c8c">전체보기</a>
+                    <a href="{{ route('admin.all-order-list') }}" class="fs15 color-8c8c8c">전체보기</a>
                 </div>
             </div>
 
@@ -211,69 +322,216 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr class="tr-warning">
-                        <td class="no-ellipsis"><span class="color-blue">23456</span></td>
-                        <td><span class="color-gray300">2025/07/04 11:30</span><br>2025/07/05 <span class="color-orange">지금즉시</span></td>
-                        <td><span class="color-gray300">메이플라워(대구)</span><br>드라이플라워(울산)</td>
-                        <td><span class="color-gray300">회계법인 더함 공인회계사...</span><br>울산광역시 동구 방어진순환...</td>
-                        <td>한도현</td>
-                        <td><span class="color-gray300">관엽식물</span><br><b class="color-green">해피트리 바닥용</b></td>
-                        <td>100,000원<br><b class="color-green">80,000원</b></td>
+                    <?php if ($allOrderDashboardOrders->isEmpty()): ?>
+                    <tr>
+                        <td colspan="11" class="align-center">주문 내역이 없습니다.</td>
+                    </tr>
+                    <?php else: ?>
+                        <?php foreach ($allOrderDashboardOrders as $order): ?>
+                        <?php
+                        $today = now()->format('Y-m-d');
+                        $deliveryDate = $order->delivery_date ? \Carbon\Carbon::parse($order->delivery_date)->format('Y-m-d') : null;
+
+                        $trClass = '';
+                        if ($order->current_status === 'delivered') {
+                            $trClass = '';
+                        } elseif ($deliveryDate) {
+                            if ($deliveryDate > $today) {
+                                $trClass = 'tr-primary';
+                            } elseif ($deliveryDate === $today) {
+                                $trClass = 'tr-warning';
+                            } else {
+                                $trClass = 'tr-warning';
+                            }
+                        }
+
+                        $statusSelectClass = '';
+                        if ($order->current_status === 'delivered') {
+                            $statusSelectClass = 'success';
+                        } elseif ($order->current_status !== 'accepted') {
+                            $statusSelectClass = 'active';
+                        }
+
+                        if ($order->current_status === 'delivered') {
+                            $statusLabel = '배송완료';
+                        } elseif ($order->current_status === 'accepted' && $order->accepted_by_type === 'admin') {
+                            $statusLabel = '본부접수';
+                        } elseif ($order->current_status === 'accepted' && $order->accepted_by_type === 'shop') {
+                            $statusLabel = '주문접수';
+                        } else {
+                            $statusLabel = '중개필요';
+                        }
+
+                        $receiverName = $order->receiverShop->shop_name ?? '본부수발주사업부';
+                        $ordererName = $order->ordererShop->shop_name ?? '-';
+                        $hasPhoto = ($order->photos_count ?? 0) > 0;
+
+                        $deliveryDateText = '-';
+                        $deliveryTimeText = '-';
+
+                        if ($order->delivery_date) {
+                            $deliveryDateCarbon = \Carbon\Carbon::parse($order->delivery_date);
+                            $deliveryDateText = $deliveryDateCarbon->format('Y/m/d');
+
+                            if ($order->delivery_hour !== null && $order->delivery_minute !== null) {
+                                $deliveryAt = \Carbon\Carbon::create(
+                                    $deliveryDateCarbon->year,
+                                    $deliveryDateCarbon->month,
+                                    $deliveryDateCarbon->day,
+                                    (int) $order->delivery_hour,
+                                    (int) $order->delivery_minute,
+                                    0
+                                );
+
+                                $nowTime = now();
+                                $threeHoursLater = $nowTime->copy()->addHours(3);
+
+                                if ($deliveryAt->lte($threeHoursLater)) {
+                                    $deliveryTimeText = '지금즉시';
+                                } else {
+                                    $deliveryTimeText = $deliveryAt->format('H:i');
+                                }
+                            }
+                        }
+                        ?>
+
+                    <tr class="{{ $trClass }}">
+                        <td class="no-ellipsis">
+                            <button
+                                type="button"
+                                class="btn-order-popup"
+                                data-popup-url="{{ route('admin.all-order-list.popup', $order) }}"
+                            >
+                                <span class="color-blue">{{ $order->order_no }}</span>
+                            </button>
+                        </td>
                         <td>
-                            <select name="" class="select">
-                                <option>본부접수</option>
+                            <span class="color-gray300">{{ optional($order->created_at)->format('Y/m/d H:i') }}</span><br>
+                            {{ $deliveryDateText }}
+                            <span class="color-orange">{{ $deliveryTimeText }}</span>
+                        </td>
+                        <td>
+                            <span class="color-gray300">{{ $receiverName }}</span><br>
+                            {{ $ordererName }}
+                        </td>
+                        <td>
+                            <span class="color-gray300">{{ \Illuminate\Support\Str::limit($order->sender_name ?? '-', 20) }}</span><br>
+                            {{ \Illuminate\Support\Str::limit($order->delivery_addr1 ?? '-', 25) }}
+                        </td>
+                        <td>{{ $order->recipient_name }}</td>
+                        <td>
+                            <span class="color-gray300">{{ $order->product_name }}</span><br>
+                            <b class="color-green">{{ $order->product_detail }}</b>
+                        </td>
+                        <td>
+                            {{ number_format((int) $order->original_amount) }}원<br>
+                            <b class="color-green">{{ number_format((int) $order->order_amount) }}원</b>
+                        </td>
+                        <td>
+                            <select name="" class="select {{ $statusSelectClass }}">
+                                <option {{ $statusLabel === '주문접수' ? 'selected' : '' }}>주문접수</option>
+                                <option {{ $statusLabel === '본부접수' ? 'selected' : '' }}>본부접수</option>
+                                <option {{ $statusLabel === '중개필요' ? 'selected' : '' }}>중개필요</option>
+                                <option {{ $statusLabel === '배송완료' ? 'selected' : '' }}>배송완료</option>
                             </select>
                         </td>
-                        <td><button type="button"><img src="{{ asset('adm/assets/img/ico_doc.png') }}" height="18"></button></td>
-                        <td><button type="button"><img src="{{ asset('adm/assets/img/ico_photo_off.png') }}" height="18"></button></td>
-                        <td class="fs13">
-                            <button type="button" class="btn btn-orange">등록</button>
-                        </td>
-                    </tr>
-                    <tr class="tr-primary">
-                        <td class="no-ellipsis"><span class="color-blue">23456</span></td>
-                        <td><span class="color-gray300">2025/07/04 11:30</span><br>2025/07/05 <span class="color-orange">지금즉시</span></td>
-                        <td><span class="color-gray300">메이플라워(대구)</span><br>드라이플라워(울산)</td>
-                        <td><span class="color-gray300">회계법인 더함 공인회계사...</span><br>울산광역시 동구 방어진순환...</td>
-                        <td>한도현</td>
-                        <td><span class="color-gray300">관엽식물</span><br><b class="color-green">해피트리 바닥용</b></td>
-                        <td>100,000원<br><b class="color-green">80,000원</b></td>
                         <td>
-                            <select name="" class="select active">
-                                <option>본부접수</option>
-                                <option selected="selected">중개필요</option>
-                            </select>
+                            <button
+                                type="button"
+                                class="btn-order-history-modal"
+                                data-history-url="{{ route('admin.all-order-list.history-modal', $order) }}"
+                            >
+                                <img src="{{ asset('adm/assets/img/ico_doc.png') }}" height="18">
+                            </button>
                         </td>
-                        <td><button type="button"><img src="{{ asset('adm/assets/img/ico_doc.png') }}" height="18"></button></td>
-                        <td><button type="button"><img src="{{ asset('adm/assets/img/ico_photo_off.png') }}" height="18"></button></td>
-                        <td class="fs13">
-                            <button type="button" class="btn btn-orange">등록</button>
-                        </td>
-                    </tr>
-                    <tr class="tr-primary">
-                        <td class="no-ellipsis"><span class="color-blue">23456</span></td>
-                        <td><span class="color-gray300">2025/07/04 11:30</span><br>2025/07/05 <span class="color-orange">지금즉시</span></td>
-                        <td><span class="color-gray300">메이플라워(대구)</span><br>드라이플라워(울산)</td>
-                        <td><span class="color-gray300">회계법인 더함 공인회계사...</span><br>울산광역시 동구 방어진순환...</td>
-                        <td>한도현</td>
-                        <td><span class="color-gray300">관엽식물</span><br><b class="color-green">해피트리 바닥용</b></td>
-                        <td>100,000원<br><b class="color-green">80,000원</b></td>
                         <td>
-                            <select name="" class="select active">
-                                <option>본부접수</option>
-                                <option selected="selected">중개필요</option>
-                            </select>
+                                <?php if ($hasPhoto): ?>
+                            <button
+                                type="button"
+                                class="btn-photo-popup"
+                                data-photo-url="{{ route('admin.all-order-list.photo-popup', $order) }}"
+                            >
+                                <img src="{{ asset('adm/assets/img/ico_photo_on.png') }}" height="18">
+                            </button>
+                            <?php else: ?>
+                            <button type="button" disabled>
+                                <img src="{{ asset('adm/assets/img/ico_photo_off.png') }}" height="18">
+                            </button>
+                            <?php endif; ?>
                         </td>
-                        <td><button type="button"><img src="{{ asset('adm/assets/img/ico_doc.png') }}" height="18"></button></td>
-                        <td><button type="button"><img src="{{ asset('adm/assets/img/ico_photo_off.png') }}" height="18"></button></td>
                         <td class="fs13">
+                                <?php if ($order->current_status === 'delivered'): ?>
+                            현장배치
+                            <?php else: ?>
                             <button type="button" class="btn btn-orange">등록</button>
+                            <?php endif; ?>
                         </td>
                     </tr>
+                    <?php endforeach; ?>
+                    <?php endif; ?>
                     </tbody>
                 </table>
             </div>
         </section>
 
     </div>
+
+    <script>
+        $(function () {
+            window.refreshMediationListPreserveQuery = function () {
+                window.location.href = window.location.href;
+            };
+
+            $(document).on('click', '.btn-order-popup', function () {
+                const url = $(this).data('popup-url');
+                if (!url) return;
+
+                window.open(
+                    url,
+                    'orderPopup',
+                    'width=1000,height=890,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
+            });
+
+            $(document).on('click', '.btn-select-receiver', function () {
+                const url = $(this).data('popup-url');
+                if (!url) return;
+
+                window.open(
+                    url,
+                    'receiverPopup',
+                    'width=1000,height=890,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
+            });
+
+            $(document).on('click', '.btn-order-history-modal', function (e) {
+                e.preventDefault();
+
+                const url = $(this).data('history-url');
+                if (!url) return;
+
+                modal(url);
+            });
+
+            $(document).on('click', '.btn-photo-popup', function (e) {
+                e.preventDefault();
+
+                const url = $(this).data('photo-url');
+                if (!url) return;
+
+                window.open(
+                    url,
+                    'photoPopup',
+                    'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
+            });
+
+            $(document).on('click', '#modal', function (e) {
+                if (e.target.id === 'modal') {
+                    $('#modal, body').removeClass('active');
+                    $('#ajax-modal').empty();
+                }
+            });
+        });
+    </script>
 @endsection

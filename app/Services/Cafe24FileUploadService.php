@@ -13,12 +13,16 @@ class Cafe24FileUploadService
     public const TYPE_PRODUCT_IMAGE = 'product-image';
     public const TYPE_DELIVERY_PHOTO = 'delivery-photo';
     public const TYPE_PHOTO_SHARE = 'photo_share';
+    public const TYPE_BANNER_NOTICE = 'banner_notice';
+    public const TYPE_BANNER_POPUP = 'banner_popup';
 
     protected array $allowedMimeTypes = [
         'image/jpeg',
         'image/png',
         'image/gif',
         'image/webp',
+        'image/bmp',
+        'image/svg+xml',
         'application/pdf',
     ];
 
@@ -197,6 +201,8 @@ class Cafe24FileUploadService
             self::TYPE_PRODUCT_IMAGE,
             self::TYPE_DELIVERY_PHOTO,
             self::TYPE_PHOTO_SHARE,
+            self::TYPE_BANNER_NOTICE,
+            self::TYPE_BANNER_POPUP,
         ];
 
         if (!in_array($type, $allowedTypes, true)) {
@@ -256,6 +262,8 @@ class Cafe24FileUploadService
             self::TYPE_PRODUCT_IMAGE => 'product-image',
             self::TYPE_DELIVERY_PHOTO => 'delivery-photo',
             self::TYPE_PHOTO_SHARE => 'photo_share',
+            self::TYPE_BANNER_NOTICE => 'banner/notice',
+            self::TYPE_BANNER_POPUP => 'banner/popup',
         };
 
         $datePath = now()->format('Y/m');

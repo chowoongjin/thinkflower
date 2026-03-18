@@ -645,3 +645,17 @@
     height: 18px;
     margin-right: 1rem;
 }
+
+/* ================================================
+	어드민 배너관리
+================================================ */
+#adminBanner .column-2{
+    display:flex;
+    justify-content:space-between;
+    margin-left:-20px;
+}
+#adminBanner .column-2 > .col{
+    flex:1 1 auto;
+    width:100%;
+    padding-left:20px;
+}

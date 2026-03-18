@@ -14,6 +14,9 @@ use App\Http\Controllers\Admin\AllOrderListController;
 use App\Http\Controllers\MyPageController;
 use App\Http\Controllers\Admin\MediationListController;
 use App\Http\Controllers\Admin\NoticeController;
+use App\Http\Controllers\Admin\MemberListController;
+use App\Http\Controllers\Admin\CalculateListController as AdminCalculateListController;
+use App\Http\Controllers\Admin\BannerSetController;
 use App\Http\Controllers\Admin\HomeController as AdminHomeController;
 use App\Models\Notice;
 use Illuminate\Support\Facades\Route;
@@ -133,4 +136,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('/notice', [NoticeController::class, 'index'])->name('notice.index');
     Route::post('/notice', [NoticeController::class, 'store'])->name('notice.store');
+
+    Route::get('/calculate-list', [AdminCalculateListController::class, 'index'])->name('calculate-list');
+
+    Route::get('/banner-set', [BannerSetController::class, 'index'])->name('banner-set.index');
+    Route::post('/banner-set', [BannerSetController::class, 'store'])->name('banner-set.store');
+
+
+    Route::get('/member-list', [MemberListController::class, 'index'])->name('member-list');
 });
