@@ -2,7 +2,23 @@
 
 @section('content')
     <div id="content__head">
-        @if (!empty($mainBanner?->image_path))
+        @if (!empty($mainBanners) && $mainBanners->count() > 1)
+            <div class="main-banner-slider" id="mainBannerSlider">
+                <div class="main-banner-track">
+                    @foreach ($mainBanners as $banner)
+                        <div class="main-banner-slide">
+                            @if (!empty($banner->link_url))
+                                <a href="{{ $banner->link_url }}">
+                                    <img src="{{ $banner->image_path }}" alt="{{ $banner->title ?? '' }}">
+                                </a>
+                            @else
+                                <img src="{{ $banner->image_path }}" alt="{{ $banner->title ?? '' }}">
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @elseif (!empty($mainBanner?->image_path))
             @if (!empty($mainBanner->link_url))
                 <a href="{{ $mainBanner->link_url }}">
                     <img src="{{ $mainBanner->image_path }}" alt="{{ $mainBanner->title ?? '' }}">
@@ -142,6 +158,27 @@
 
     <script>
         $(function () {
+            const $slider = $('#mainBannerSlider');
+            if (!$slider.length) return;
+
+            const $track = $slider.find('.main-banner-track');
+            const $slides = $track.find('.main-banner-slide');
+            const slideCount = $slides.length;
+
+            if (slideCount <= 1) return;
+
+            let currentIndex = 0;
+
+            setInterval(function () {
+                currentIndex++;
+
+                if (currentIndex >= slideCount) {
+                    currentIndex = 0;
+                }
+
+                $track.css('transform', 'translateX(-' + (currentIndex * 100) + '%)');
+            }, 3000);
+
             $(document).on('click', '.order-popup-link', function (e) {
                 e.preventDefault();
                 const url = $(this).data('popup-url') || $(this).attr('href');

@@ -140,3 +140,29 @@
     }
 }
 
+#content__head .main-banner-slider {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+#content__head .main-banner-track {
+    display: flex;
+    width: 100%;
+    transition: transform 0.5s ease-in-out;
+}
+
+#content__head .main-banner-slide {
+    min-width: 100%;
+    flex: 0 0 100%;
+}
+
+#content__head .main-banner-slide img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+#content__head .main-banner-slide a {
+    display: block;
+}

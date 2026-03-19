@@ -3,32 +3,35 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use Illuminate\Support\Facades\DB;
+use App\Models\Banner;
 
 class HomeController extends Controller
 {
     public function index()
     {
-        $recentReceives = collect();
         $user = auth()->user();
         $shop = $user?->shop;
         $now = now();
 
-        $mainBanner = DB::table('banners')
+        $mainBanners = Banner::query()
             ->where('banner_type', 'main')
-            ->where('is_active', 1)
-            ->where(function ($q) use ($now) {
-                $q->whereNull('start_at')
+            ->whereNotNull('image_path')
+            ->where('image_path', '!=', '')
+            ->where(function ($query) use ($now) {
+                $query->whereNull('start_at')
                     ->orWhere('start_at', '<=', $now);
             })
-            ->where(function ($q) use ($now) {
-                $q->whereNull('end_at')
+            ->where(function ($query) use ($now) {
+                $query->whereNull('end_at')
                     ->orWhere('end_at', '>=', $now);
             })
             ->orderBy('sort_order')
             ->orderByDesc('id')
-            ->first();
+            ->get();
 
+        $mainBanner = $mainBanners->first();
+
+        $recentReceives = collect();
         $waitingOrderCount = 0;
         $acceptedReceiveCount = 0;
         $uncheckedReceiveCount = 0;
@@ -69,6 +72,7 @@ class HomeController extends Controller
 
         return view('pages.index', [
             'mainBanner' => $mainBanner,
+            'mainBanners' => $mainBanners,
             'waitingOrderCount' => $waitingOrderCount,
             'acceptedReceiveCount' => $acceptedReceiveCount,
             'uncheckedReceiveCount' => $uncheckedReceiveCount,

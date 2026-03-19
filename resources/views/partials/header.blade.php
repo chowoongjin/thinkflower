@@ -39,14 +39,14 @@
                     <li class="{{ request()->routeIs('calculate-list') ? 'active' : '' }}">
                         <a href="{{ route('calculate-list') }}">정산내역</a>
                     </li>
-                    <li>
-                        <a href="#none">이용료안내</a>
+                    <li class="{{ request()->routeIs('usage-fee') ? 'active' : '' }}">
+                        <a href="{{ route('usage-fee') }}">이용료 안내</a>
                     </li>
                     <li class="{{ request()->routeIs('photo-list') ? 'active' : '' }}">
                         <a href="{{ route('photo-list') }}">사진공유방</a>
                     </li>
-                    <li>
-                        <a href="#none">계산서 내역</a>
+                    <li class="{{ request()->routeIs('bill-list') ? 'active' : '' }}">
+                        <a href="{{ route('bill-list') }}">계산서내역</a>
                     </li>
                 </ul>
             </nav>
@@ -107,7 +107,7 @@
         <div class="row">
             <h3 class="sidebar-title">간편 메뉴 바로가기</h3>
             <ul>
-                <li><a href="#none">공지사항 전체보기</a></li>
+                <li><a href="{{ route('announcement.index') }}">공지사항 전체보기</a></li>
                 <li><a href="#none">인트라넷 사용가이드</a></li>
                 <li><a href="#none">개선희망사항 접수</a></li>
             </ul>

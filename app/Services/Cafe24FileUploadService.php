@@ -26,6 +26,14 @@ class Cafe24FileUploadService
         'application/pdf',
     ];
 
+    protected function shouldSkipResize(string $type): bool
+    {
+        return in_array($type, [
+            self::TYPE_BANNER_NOTICE,
+            self::TYPE_BANNER_POPUP,
+        ], true);
+    }
+
     public function upload(UploadedFile $file, string $type): array
     {
         $this->validateType($file, $type);
@@ -43,11 +51,20 @@ class Cafe24FileUploadService
 
             if ($isPdf) {
                 $tmpUploadPath = $this->convertPdfFirstPageToJpg($tmpOriginalPath);
-                $tmpUploadPath = $this->resizeImageIfNeeded($tmpUploadPath);
+
+                if (!$this->shouldSkipResize($type)) {
+                    $tmpUploadPath = $this->resizeImageIfNeeded($tmpUploadPath);
+                }
+
                 $extension = 'jpg';
                 $mimeType = 'image/jpeg';
             } else {
-                $tmpUploadPath = $this->resizeImageIfNeeded($tmpOriginalPath);
+                if ($this->shouldSkipResize($type)) {
+                    $tmpUploadPath = $tmpOriginalPath;
+                } else {
+                    $tmpUploadPath = $this->resizeImageIfNeeded($tmpOriginalPath);
+                }
+
                 $extension = $originalExtension;
                 $mimeType = $originalMimeType;
             }
@@ -117,11 +134,20 @@ class Cafe24FileUploadService
         try {
             if ($isPdf) {
                 $tmpUploadPath = $this->convertPdfFirstPageToJpg($tmpOriginalPath);
-                $tmpUploadPath = $this->resizeImageIfNeeded($tmpUploadPath);
+
+                if (!$this->shouldSkipResize($type)) {
+                    $tmpUploadPath = $this->resizeImageIfNeeded($tmpUploadPath);
+                }
+
                 $extension = 'jpg';
                 $mimeType = 'image/jpeg';
             } else {
-                $tmpUploadPath = $this->resizeImageIfNeeded($tmpOriginalPath);
+                if ($this->shouldSkipResize($type)) {
+                    $tmpUploadPath = $tmpOriginalPath;
+                } else {
+                    $tmpUploadPath = $this->resizeImageIfNeeded($tmpOriginalPath);
+                }
+
                 $extension = $originalExtension;
                 $mimeType = $originalMimeType;
             }

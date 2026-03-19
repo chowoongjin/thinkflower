@@ -17,6 +17,9 @@ use App\Http\Controllers\Admin\NoticeController;
 use App\Http\Controllers\Admin\MemberListController;
 use App\Http\Controllers\Admin\CalculateListController as AdminCalculateListController;
 use App\Http\Controllers\Admin\BannerSetController;
+use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\BillListController;
+use App\Http\Controllers\UsageFeeController;
 use App\Http\Controllers\Admin\HomeController as AdminHomeController;
 use App\Models\Notice;
 use Illuminate\Support\Facades\Route;
@@ -104,6 +107,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/my-page/shop-info', [MyPageController::class, 'updateShopInfo'])->name('my-page.shop-info.update');
     Route::get('/my-page/settlement-info-modal', [MyPageController::class, 'settlementInfoModal'])->name('my-page.settlement-info-modal');
     Route::post('/my-page/settlement-info', [MyPageController::class, 'updateSettlementInfo'])->name('my-page.settlement-info.update');
+
+    Route::get('/announcement', [AnnouncementController::class, 'index'])->name('announcement.index');
+    Route::get('/announcement/{announcement}', [AnnouncementController::class, 'show'])->name('announcement.show');
+    Route::get('/usage-fee', [UsageFeeController::class, 'index'])->name('usage-fee');
+    Route::get('/bill-list', [BillListController::class, 'index'])->name('bill-list');
 
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 });

@@ -5,13 +5,12 @@
 
         <div id="adminBanner">
 
-
             <form action="{{ route('admin.banner-set.store') }}" method="post" enctype="multipart/form-data">
                 @csrf
                 <div class="column-2">
                     <div class="col">
                         <section>
-                            <h2 class="tt">✔️ 공지사항 관리</h2>
+                            <h2 class="tt">✔️ 메인베너 관리</h2>
                             <table class="table-data style6 mt20">
                                 <colgroup>
                                     <col style="width:130px">
@@ -169,6 +168,11 @@
                 $table.find('.file-input').val('');
                 $table.find('.file-delete-flag').val('1');
             });
+
+            $('form[action="{{ route('admin.banner-set.store') }}"]').off('submit.bannerSubmit').on('submit.bannerSubmit', function () {
+                openLoadingModal();
+            });
         });
     </script>
+    @include('partials.loading-modal')
 @endsection
