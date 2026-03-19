@@ -223,6 +223,19 @@
                 $('#order-history-modal-area').empty();
                 $('body').removeClass('overflow-hidden');
             });
+
+            $(document).on('click', '.btn-point-charge-popup', function (e) {
+                e.preventDefault();
+
+                const url = $(this).data('popup-url');
+                if (!url) return;
+
+                window.open(
+                    url,
+                    'pointChargePopup',
+                    'width=500,height=500,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
+            });
         });
     </script>
 @endsection

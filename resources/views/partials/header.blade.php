@@ -96,7 +96,11 @@
         <div class="row">
             <small>보유금액</small>
             <strong class="color-primary fs20 pl10">{{ number_format(optional(optional(auth()->user())->shop)->current_point_balance ?? 0) }}원</strong>
-            <a href="#none" class="btn btn-point btn-fluid mb10">포인트 간편충전</a>
+            <a href="#none"
+               class="btn btn-point btn-fluid mb10" id="btn-point-charge-popup"
+               data-popup-url="{{ route('modal.point-charge') }}">
+                포인트 간편충전
+            </a>
         </div>
 
         <div class="row" id="sidebar__tel">
@@ -125,3 +129,21 @@
     </aside>
 
     <div id="content">
+@push('scripts')
+    <script>
+        $(function () {
+            $(document).on('click', '#btn-point-charge-popup', function (e) {
+                e.preventDefault();
+
+                const url = $(this).data('popup-url');
+                if (!url) return;
+
+                window.open(
+                    url,
+                    'pointChargePopup',
+                    'width=500,height=500,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
+            });
+        });
+    </script>
+@endpush

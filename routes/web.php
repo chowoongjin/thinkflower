@@ -20,6 +20,9 @@ use App\Http\Controllers\Admin\BannerSetController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\BillListController;
 use App\Http\Controllers\UsageFeeController;
+
+use App\Http\Controllers\PointChargeController; //테스트
+
 use App\Http\Controllers\Admin\HomeController as AdminHomeController;
 use App\Models\Notice;
 use Illuminate\Support\Facades\Route;
@@ -76,6 +79,8 @@ Route::middleware('auth')->group(function () {
         return view('pages.bonbu-balju', compact('generalNotices', 'specialNotices'));
     })->name('bonbu-balju');
 
+    Route::get('/modal/point-charge', [ModalController::class, 'pointCharge'])->name('modal.point-charge');
+    Route::post('/point-charge/test', [PointChargeController::class, 'store'])->name('point-charge.test.store');
     Route::post('/bonbu-balju/order', [OrderController::class, 'store'])->name('bonbu-balju.order.store');
     Route::post('/bonbu-balju/hq', [OrderController::class, 'storeHq'])->name('bonbu-balju.hq.store');
 

@@ -2,9 +2,7 @@
 
 @section('content')
     <div id="content__body" style="width:900px;position:relative">
-
-        <div id="bonbu-balju">
-
+        <div id="bonbu-balju" class="{{ $errors->any() ? 'has-alert-error' : '' }}">
             <aside id="sidePanel" class="new-design">
                 <section class="panel active" data-panel="ops">
                     <div class="panel__head">
@@ -120,7 +118,7 @@
                 </table>
             </section>
 
-            <form id="bonbu-balju-form" action="{{ route('bonbu-balju.hq.store') }}" method="POST" enctype="multipart/form-data">
+            <form id="bonbu-balju-form" action="{{ route('bonbu-balju.order.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
                 <section class="mt30">
@@ -173,7 +171,7 @@
                                 <div class="input-group-file2">
                                     <input type="file" name="product_image_file" id="file">
                                     <label for="file">이미지 첨부</label>
-                                    <input type="text" name="product_image_url" id="product_image_url" value="{{ old('product_image_url') }}" placeholder="상품이미지 주소가 잇다면 붙여 넣어 주세요">
+                                    <input type="text" name="product_image_input_url" id="product_image_url" value="{{ old('product_image_input_url') }}" placeholder="상품이미지 주소가 잇다면 붙여 넣어 주세요">
                                 </div>
                                 @error('product_image_file')
                                 <p class="mt5 color-red">{{ $message }}</p>
@@ -420,12 +418,38 @@
         </div>
 
     </div>
+    @include('partials.loading-modal')
 @endsection
-
+@push('styles')
+    <style>
+        #bonbu-balju.has-alert-error .mt5.color-red {
+            display: none;
+        }
+    </style>
+@endpush
 @push('scripts')
     <script>
         $(function () {
             const PHOTO_REQUEST_TEXT = '★현장사진 꼭 부탁드립니다';
+            let isSubmitting = false;
+
+            closeLoadingModal();
+
+            @if ($errors->any())
+            alert(@json($errors->all()[0]));
+            @endif
+
+            @if (session('success_redirect_order_list'))
+            alert(@json(session('success_redirect_order_list')));
+            @endif
+
+            @if (session('error'))
+            alert(@json(session('error')));
+            @endif
+
+            @if (session('success'))
+            alert(@json(session('success')));
+            @endif
 
             const productPresetMap = {
                 '근조3단(기본)': {
@@ -450,28 +474,28 @@
                     ribbon_phrase: '삼가 고인의 명복을 빕니다'
                 },
                 '관엽식물': {
-                    product_detail: '금액대에 맞게',
+                    product_detail: '금액에 맞게',
                     original_amount: 80000,
                     immediate: false,
                     request_photo: false,
                     ribbon_phrase: '축발전'
                 },
                 '꽃바구니': {
-                    product_detail: '금액대에 맞게',
+                    product_detail: '금액에 맞게',
                     original_amount: 70000,
                     immediate: false,
                     request_photo: false,
                     ribbon_phrase: '축발전'
                 },
                 '서양란': {
-                    product_detail: '금액대에 맞게',
+                    product_detail: '금액에 맞게',
                     original_amount: 100000,
                     immediate: false,
                     request_photo: false,
                     ribbon_phrase: '축발전'
                 },
                 '동양란': {
-                    product_detail: '금액대에 맞게',
+                    product_detail: '금액에 맞게',
                     original_amount: 80000,
                     immediate: false,
                     request_photo: false,
@@ -611,12 +635,12 @@
 
                 if (currentHour >= 0 && currentHour < 9) {
                     if (showAlert) {
-                        alert('오전 시간대 요청으로 당일 12:00로 자동 설정됩니다.');
+                        alert('지금즉시는 오전 시간대 요청으로 당일 12:00로 자동 설정됩니다.');
                     }
                     targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
                 } else if (currentHour > 18 || (currentHour === 18 && currentMinute >= 30)) {
                     if (showAlert) {
-                        alert('본부 운영시간 외 요청입니다.\n다음날 12:00로 자동 설정됩니다.');
+                        alert('지금즉시는 본부 운영시간 외 요청입니다. 다음날 12:00로 자동 설정됩니다.');
                     }
                     targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 12, 0, 0);
                 } else {
@@ -906,6 +930,16 @@
 
             $(document).on('click', '#btn-address-search', function () {
                 openAddressSearch();
+            });
+
+            $(document).on('submit', '#bonbu-balju-form', function (e) {
+                if (isSubmitting) {
+                    e.preventDefault();
+                    return;
+                }
+
+                isSubmitting = true;
+                openLoadingModal();
             });
 
             const $checkedProducts = $('input[name="product_name"]:checked');

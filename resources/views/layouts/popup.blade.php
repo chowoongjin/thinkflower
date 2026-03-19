@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? '팝업' }}</title>
 
-    <link rel="stylesheet" href="{{ asset('assets/css/pretendard.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/common.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/layout.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/pages.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/add.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/common.css') }}?v={{ filemtime(public_path('assets/css/common.css')) }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/layout.css') }}?v={{ filemtime(public_path('assets/css/layout.css')) }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/pages.css') }}?v={{ filemtime(public_path('assets/css/pages.css')) }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/add.css') }}?v={{ filemtime(public_path('assets/css/add.css')) }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/pretendard.css') }}?v={{ filemtime(public_path('assets/css/pretendard.css')) }}">
 
     <script src="{{ asset('assets/js/jquery-3.6.0.min.js') }}"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
@@ -19,6 +19,7 @@
 <body>
 @yield('content')
 
+@stack('styles'))
 @stack('scripts')
 </body>
 </html>

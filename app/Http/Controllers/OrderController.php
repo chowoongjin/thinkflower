@@ -11,6 +11,8 @@ use App\Services\PointService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
+use RuntimeException;
 
 class OrderController extends Controller
 {
@@ -95,8 +97,9 @@ class OrderController extends Controller
             $productImagePath = $uploaded['url'];
             $productImageUrl = $uploaded['url'];
         } elseif (!empty($validated['product_image_input_url'])) {
-            $productImagePath = $validated['product_image_input_url'];
-            $productImageUrl = $validated['product_image_input_url'];
+            $uploaded = $this->uploadProductImageFromUrl($validated['product_image_input_url']);
+            $productImagePath = $uploaded['url'];
+            $productImageUrl = $uploaded['url'];
         }
 
         DB::transaction(function () use (
@@ -265,8 +268,10 @@ class OrderController extends Controller
             $productImagePath = $uploaded['url'];
             $productImageUrl = $uploaded['url'];
         } elseif (!empty($validated['product_image_input_url'])) {
-            $productImagePath = $validated['product_image_input_url'];
-            $productImageUrl = $validated['product_image_input_url'];
+            $uploaded = $this->uploadProductImageFromUrl($validated['product_image_input_url']);
+
+            $productImagePath = $uploaded['url'];
+            $productImageUrl = $uploaded['url'];
         }
 
         DB::transaction(function () use (
@@ -359,6 +364,58 @@ class OrderController extends Controller
         return redirect()
             ->route('bonbu-balju')
             ->with('success_redirect_order_list', '발주서가 정상적으로 등록되었습니다.');
+    }
+
+    protected function uploadProductImageFromUrl(string $imageUrl): array
+    {
+        $response = Http::timeout(20)
+            ->withHeaders([
+                'User-Agent' => 'Mozilla/5.0',
+            ])
+            ->get($imageUrl);
+
+        if (!$response->successful()) {
+            throw new RuntimeException('상품이미지 URL을 다운로드하지 못했습니다.');
+        }
+
+        $mimeType = $response->header('Content-Type') ?: 'application/octet-stream';
+        $mimeType = trim(explode(';', $mimeType)[0]);
+
+        $allowedMimeTypes = [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'application/pdf',
+        ];
+
+        if (!in_array($mimeType, $allowedMimeTypes, true)) {
+            throw new RuntimeException('상품이미지 URL은 JPG, PNG, GIF, WEBP, PDF만 등록할 수 있습니다.');
+        }
+
+        $extension = match ($mimeType) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+            'application/pdf' => 'pdf',
+            default => 'tmp',
+        };
+
+        $tempDir = storage_path('app/tmp_uploads/url');
+        if (!is_dir($tempDir) && !mkdir($tempDir, 0775, true) && !is_dir($tempDir)) {
+            throw new RuntimeException('임시 업로드 디렉터리를 생성할 수 없습니다.');
+        }
+
+        $tempPath = $tempDir . '/' . Str::uuid()->toString() . '.' . $extension;
+        file_put_contents($tempPath, $response->body());
+
+        return $this->uploadService->uploadFromLocalPath(
+            $tempPath,
+            Cafe24FileUploadService::TYPE_PRODUCT_IMAGE,
+            basename(parse_url($imageUrl, PHP_URL_PATH) ?: ('remote.' . $extension)),
+            $mimeType
+        );
     }
 
     protected function generateOrderNo(): string

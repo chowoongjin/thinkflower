@@ -108,4 +108,9 @@ class ModalController extends Controller
             'rightRows' => array_slice($detailRows, $half),
         ]);
     }
+
+    public function pointCharge()
+    {
+        return view('modals.point-charge');
+    }
 }
