@@ -2,12 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\User;
+use App\Models\PointTransaction;
+use App\Models\ProductCategory;
+use App\Models\ShopDeliveryArea;
 
 class Shop extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'shop_name',
@@ -26,6 +31,12 @@ class Shop extends Model
         'bank_account',
         'bank_holder',
         'current_point_balance',
+        'admin_memo',
+        'point_policy_type',
+        'credit_limit',
+        'billing_day',
+        'payment_due_day',
+        'is_tax_invoice_enabled',
         'status',
         'is_active',
         'approved_at',
@@ -36,6 +47,11 @@ class Shop extends Model
     protected function casts(): array
     {
         return [
+            'current_point_balance' => 'integer',
+            'credit_limit' => 'integer',
+            'billing_day' => 'integer',
+            'payment_due_day' => 'integer',
+            'is_tax_invoice_enabled' => 'boolean',
             'is_active' => 'boolean',
             'approved_at' => 'datetime',
             'rejected_at' => 'datetime',
