@@ -19,7 +19,7 @@
 <body>
 @yield('content')
 
-@stack('styles'))
+@stack('styles')
 @stack('scripts')
 </body>
 </html>

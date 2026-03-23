@@ -149,12 +149,18 @@
                     <span class="color-gray300">{{ $order->receiver_relation }}</span>
                 @endif
             @else
-                <button type="button"
-                        class="btn btn-orange btn-complete-popup"
-                        data-popup-url="{{ route('suju-list.complete-popup', $order->order_no) }}"
-                        data-order-status="{{ $order->current_status }}">
-                    등록
-                </button>
+                <div class="extra-select">
+                    <select name="">
+                        <option>본부접수</option>
+                        <option>주문접수</option>
+                    </select>
+                    <button type="button"
+                            class="btn btn-orange btn-complete-popup"
+                            data-popup-url="{{ route('suju-list.complete-popup', $order->order_no) }}"
+                            data-order-status="{{ $order->current_status }}">
+                        인수등록
+                    </button>
+                </div>
             @endif
         </td>
     </tr>
