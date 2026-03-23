@@ -71,14 +71,13 @@
             @endif
         </td>
         <td>
-            <span class="color-gray300">{{ $order->ribbon_phrase }}</span><br>
             {{ $order->delivery_addr1 }}
         </td>
         <td>
-            <span class="color-gray300">{{ $order->sender_name }}</span><br>
+            {{ $order->ribbon_phrase }}
         </td>
         <td>
-            <span class="color-gray300">{{ $order->recipient_name }}</span><br>
+            {{ $order->recipient_name }}
         </td>
         <td>
             <b class="color-green">{{ $order->product_detail }}</b>

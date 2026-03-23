@@ -10,13 +10,20 @@
             @include('pages.partials.order-list-content')
 
             <div id="order-list-result">
-                @include('pages.partials.order-list-table')
+                @if (!empty($isEasyView))
+                    @include('pages.partials.order-list-easy-table')
+                @else
+                    @include('pages.partials.order-list-table')
+                @endif
             </div>
         </div>
     </div>
 
     <div id="order-history-modal-area"></div>
 
+@endsection
+
+@push('scripts')
     <script>
         $(function () {
             let filterTimer = null;
@@ -51,14 +58,12 @@
                 const today = formatDate(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
                 const tomorrow = formatDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
                 const yesterday = formatDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
-                const thisMonthFrom = formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
-                const thisMonthTo = formatDate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
-                const lastMonthFrom = formatDate(new Date(now.getFullYear(), now.getMonth() - 1, 1));
-                const lastMonthTo = formatDate(new Date(now.getFullYear(), now.getMonth(), 0));
 
-                if (from === thisMonthFrom && to === thisMonthTo) {
+                if (from === formatDate(new Date(now.getFullYear(), now.getMonth(), 1)) &&
+                    to === formatDate(new Date(now.getFullYear(), now.getMonth() + 1, 0))) {
                     $('#range-this-month').prop('checked', true);
-                } else if (from === lastMonthFrom && to === lastMonthTo) {
+                } else if (from === formatDate(new Date(now.getFullYear(), now.getMonth() - 1, 1)) &&
+                    to === formatDate(new Date(now.getFullYear(), now.getMonth(), 0))) {
                     $('#range-last-month').prop('checked', true);
                 } else if (from === today && to === today) {
                     $('#range-today').prop('checked', true);
@@ -79,6 +84,11 @@
                         }
                     });
                 }
+            }
+
+            function syncEasyToggle() {
+                const isEasy = $('#easy_view').val() === '1';
+                $('#easy-view-toggle').prop('checked', isEasy);
             }
 
             function loadOrderList(urlOverride = null) {
@@ -103,6 +113,7 @@
                         $('#order-list-result').html(html);
                         bindDatepicker();
                         syncQuickRangeRadio();
+                        syncEasyToggle();
 
                         if (!urlOverride) {
                             window.history.replaceState({}, '', url + '?' + data);
@@ -124,10 +135,27 @@
 
             function scheduleLoad(delay = 400) {
                 clearTimeout(filterTimer);
+
                 filterTimer = setTimeout(function () {
                     loadOrderList();
                 }, delay);
             }
+
+            $('.panel').each(function () {
+                const $panel = $(this);
+
+                if ($panel.hasClass('active')) {
+                    $panel.find('.panel__body').show();
+                } else {
+                    $panel.find('.panel__body').hide();
+                }
+            });
+
+            $(document).on('click', '.panel-toggle', function () {
+                const $panel = $(this).closest('.panel');
+                $panel.toggleClass('active');
+                $panel.find('.panel__body').stop(true, true).slideToggle(200);
+            });
 
             $(document).on('change', '.filter-change', function () {
                 scheduleLoad(200);
@@ -170,14 +198,21 @@
 
             $(document).on('click', '#order-list-result .pagination a', function (e) {
                 e.preventDefault();
+
                 const href = $(this).attr('href');
                 if (href) {
                     loadOrderList(href);
                 }
             });
 
+            $(document).on('change', '#easy-view-toggle', function () {
+                $('#easy_view').val($(this).is(':checked') ? '1' : '0');
+                loadOrderList();
+            });
+
             bindDatepicker();
             syncQuickRangeRadio();
+            syncEasyToggle();
 
             $(document).on('click', '.order-popup-link', function (e) {
                 e.preventDefault();
@@ -229,4 +264,4 @@
             });
         });
     </script>
-@endsection
+@endpush

@@ -1,8 +1,11 @@
 <div id="suju-list-content">
-    <aside id="sidePanel">
-        <section class="panel">
+    <aside id="sidePanel" class="new-design">
+        <section class="panel active" data-panel="ops">
             <div class="panel__head">
                 <h2 class="panel-title">본부 운영정보</h2>
+                <button type="button" class="panel-toggle">
+                    <img src="{{ asset('assets/img/arrow_down_new.png') }}">
+                </button>
             </div>
             <div class="panel__body">
                 <ul class="list-qa">
@@ -22,9 +25,12 @@
             </div>
         </section>
 
-        <section class="panel">
+        <section class="panel active" data-panel="summary">
             <div class="panel__head">
                 <h2 class="panel-title">간편수주 요약</h2>
+                <button type="button" class="panel-toggle">
+                    <img src="{{ asset('assets/img/arrow_down_new.png') }}">
+                </button>
             </div>
             <div class="panel__body">
                 <ul class="list-qa">
@@ -33,10 +39,26 @@
                         <div class="a">{{ number_format($summaryCount) }}건</div>
                     </li>
                     <li>
-                        <div class="q">조회 접수금액</div>
+                        <div class="q">조회 결제금액</div>
                         <div class="a color-orange">{{ number_format($summaryAmount) }}원</div>
                     </li>
                 </ul>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="flex">
+                <div class="flex__col">간편하게 보기</div>
+                <div class="flex__col">
+                    <label class="toggle">
+                        <input
+                            type="checkbox"
+                            id="easy-view-toggle"
+                            {{ !empty($isEasyView) ? 'checked' : '' }}
+                        >
+                        <span class="track"></span>
+                    </label>
+                </div>
             </div>
         </section>
     </aside>
@@ -147,3 +169,25 @@
 
     </section>
 </div>
+
+@push('scripts')
+    <script>
+        $(function () {
+            $('.panel').each(function () {
+                const $panel = $(this);
+
+                if ($panel.hasClass('active')) {
+                    $panel.find('.panel__body').show();
+                } else {
+                    $panel.find('.panel__body').hide();
+                }
+            });
+
+            $(document).on('click', '.panel-toggle', function () {
+                const $panel = $(this).closest('.panel');
+                $panel.toggleClass('active');
+                $panel.find('.panel__body').stop(true, true).slideToggle(200);
+            });
+        });
+    </script>
+@endpush

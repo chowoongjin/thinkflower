@@ -21,11 +21,6 @@ class OrderListController extends Controller
             ? $request->date_to
             : Carbon::today()->addDays(15)->format('Y-m-d');
 
-        $productName = trim((string) $request->input('product_name', ''));
-        $orderNo = trim((string) $request->input('order_no', ''));
-        $deliveryAddr1 = trim((string) $request->input('delivery_addr1', ''));
-        $recipientName = trim((string) $request->input('recipient_name', ''));
-
         $query = Order::query()
             ->with(['ordererShop', 'receiverShop'])
             ->withCount('photos')
@@ -33,7 +28,9 @@ class OrderListController extends Controller
             ->whereDate('delivery_date', '>=', $dateFrom)
             ->whereDate('delivery_date', '<=', $dateTo);
 
-        if ($productName !== '') {
+        if ($request->filled('product_name')) {
+            $productName = trim($request->product_name);
+
             if ($productName === '근조화환') {
                 $query->where(function ($q) {
                     $q->where('product_name', 'like', '근조3단%')
@@ -49,16 +46,16 @@ class OrderListController extends Controller
             }
         }
 
-        if ($orderNo !== '') {
-            $query->where('order_no', 'like', '%' . $orderNo . '%');
+        if ($request->filled('order_no')) {
+            $query->where('order_no', 'like', '%' . trim($request->order_no) . '%');
         }
 
-        if ($deliveryAddr1 !== '') {
-            $query->where('delivery_addr1', 'like', '%' . $deliveryAddr1 . '%');
+        if ($request->filled('delivery_addr1')) {
+            $query->where('delivery_addr1', 'like', '%' . trim($request->delivery_addr1) . '%');
         }
 
-        if ($recipientName !== '') {
-            $query->where('recipient_name', 'like', '%' . $recipientName . '%');
+        if ($request->filled('recipient_name')) {
+            $query->where('recipient_name', 'like', '%' . trim($request->recipient_name) . '%');
         }
 
         $orders = (clone $query)
@@ -69,20 +66,24 @@ class OrderListController extends Controller
         $summaryCount = (clone $query)->count();
         $summaryAmount = (clone $query)->sum('payment_amount');
 
+        $isEasyView = $request->boolean('easy_view');
+
         $data = compact(
             'orders',
             'summaryCount',
             'summaryAmount',
             'dateFrom',
             'dateTo',
-            'productName',
-            'orderNo',
-            'deliveryAddr1',
-            'recipientName'
+            'isEasyView'
         );
 
         if ($request->ajax()) {
-            return view('pages.partials.order-list-table', $data);
+            return view(
+                $isEasyView
+                    ? 'pages.partials.order-list-easy-table'
+                    : 'pages.partials.order-list-table',
+                $data
+            );
         }
 
         return view('pages.order-list', $data);
