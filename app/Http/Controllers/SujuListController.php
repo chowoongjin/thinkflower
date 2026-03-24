@@ -563,6 +563,132 @@ class SujuListController extends Controller
             'photos' => $photos,
         ]);
     }
+
+    protected function applyAcceptedFromList(Order $order, $user, $shop): void
+    {
+        $order->refresh();
+
+        if (in_array($order->current_status, ['delivered', 'cancelled'], true) || $order->receiver_shop_id === null) {
+            abort(422, '변경할 수 없는 주문 상태입니다.');
+        }
+
+        $oldStatus = $order->current_status;
+        $oldAcceptedByType = $order->accepted_by_type;
+        $shopDisplayName = $this->makeShopDisplayName($shop);
+
+        $order->update([
+            'brokerage_type' => 'assigned',
+            'current_status' => 'accepted',
+            'accepted_at' => $order->accepted_at ?: now(),
+            'accepted_by_type' => 'shop',
+        ]);
+
+        $historyMessage = $oldAcceptedByType === 'admin'
+            ? '수주사 <strong>' . $shopDisplayName . '</strong> 에서 주문접수 확인'
+            : '수주사 <strong>' . $shopDisplayName . '</strong> 에서 배송가능 여부 확인';
+
+        DB::table('order_histories')->insert([
+            'order_id' => $order->id,
+            'order_no' => $order->order_no,
+            'history_type' => 'accepted',
+            'message' => $historyMessage,
+            'processed_at' => now(),
+            'actor_user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('order_status_logs')->insert([
+            'order_id' => $order->id,
+            'from_status' => $oldStatus,
+            'to_status' => 'accepted',
+            'changed_by_user_id' => $user->id,
+            'memo' => $oldAcceptedByType === 'admin' ? '수주사 주문접수 확인' : '수주사 주문접수 처리',
+            'created_at' => now(),
+        ]);
+    }
+
+    protected function applyRejectedFromList(Order $order, $user, $shop): void
+    {
+        $order->refresh();
+
+        if (in_array($order->current_status, ['accepted', 'delivered', 'cancelled'], true) || $order->receiver_shop_id === null) {
+            abort(422, '주문거절로 변경할 수 없는 상태입니다.');
+        }
+
+        $oldStatus = $order->current_status;
+        $shopDisplayName = $this->makeShopDisplayName($shop);
+
+        $order->update([
+            'receiver_shop_id' => null,
+            'brokerage_type' => 'waiting',
+            'current_status' => 'submitted',
+            'accepted_at' => null,
+            'accepted_by_type' => null,
+        ]);
+
+        DB::table('order_histories')->insert([
+            'order_id' => $order->id,
+            'order_no' => $order->order_no,
+            'history_type' => 'updated',
+            'message' => '수주사 <strong>' . $shopDisplayName . '</strong> 에서 배송불가 확인',
+            'processed_at' => now(),
+            'actor_user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('order_status_logs')->insert([
+            'order_id' => $order->id,
+            'from_status' => $oldStatus,
+            'to_status' => 'submitted',
+            'changed_by_user_id' => $user->id,
+            'memo' => '수주사 주문거절 처리',
+            'created_at' => now(),
+        ]);
+    }
+
+    public function changeStatusFromList(Request $request, Order $order)
+    {
+        $user = $request->user();
+        $shop = $user?->shop;
+
+        abort_unless($shop, 403);
+        abort_unless((int) $order->receiver_shop_id === (int) $shop->id, 403);
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:accepted,rejected,delivered'],
+        ], [
+            'status.required' => '변경할 상태를 선택해 주세요.',
+            'status.in' => '변경할 수 없는 상태입니다.',
+        ]);
+
+        if ($validated['status'] === 'delivered') {
+            return response()->json([
+                'success' => false,
+                'message' => '배송완료는 인수등록 팝업에서 처리해 주세요.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($validated, $order, $user, $shop) {
+            if ($validated['status'] === 'accepted') {
+                $this->applyAcceptedFromList($order, $user, $shop);
+                return;
+            }
+
+            if ($validated['status'] === 'rejected') {
+                $this->applyRejectedFromList($order, $user, $shop);
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => $validated['status'] === 'accepted'
+                ? '주문접수로 변경되었습니다.'
+                : '주문거절로 변경되었습니다.',
+        ]);
+    }
+
     protected function makeShopDisplayName(?Shop $shop): string
     {
         if (!$shop) {

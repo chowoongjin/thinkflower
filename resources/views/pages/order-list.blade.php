@@ -206,8 +206,15 @@
             });
 
             $(document).on('change', '#easy-view-toggle', function () {
-                $('#easy_view').val($(this).is(':checked') ? '1' : '0');
-                loadOrderList();
+                const isEasy = $(this).is(':checked') ? '1' : '0';
+                $('#easy_view').val(isEasy);
+
+                const currentUrl = new URL(window.location.href);
+                const params = currentUrl.searchParams;
+
+                params.set('easy_view', isEasy);
+
+                loadOrderList(currentUrl.pathname + '?' + params.toString());
             });
 
             bindDatepicker();

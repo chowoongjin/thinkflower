@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="{{ asset('assets/css/pages.css') }}?v={{ filemtime(public_path('assets/css/pages.css')) }}">
     <link rel="stylesheet" href="{{ asset('assets/css/add.css') }}?v={{ filemtime(public_path('assets/css/add.css')) }}">
     <link rel="stylesheet" href="{{ asset('assets/css/pretendard.css') }}?v={{ filemtime(public_path('assets/css/pretendard.css')) }}">
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
     <script src="{{ asset('assets/js/jquery-3.6.0.min.js') }}"></script>

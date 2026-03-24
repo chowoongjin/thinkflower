@@ -92,6 +92,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/suju-list', [SujuListController::class, 'index'])->name('suju-list');
     Route::get('/suju-list/{order}/popup', [SujuListController::class, 'popup'])->name('suju-list.popup');
     Route::get('/suju-list/{order}/history-modal', [SujuListController::class, 'historyModal'])->name('suju-list.history-modal');
+    Route::post('/suju-list/{order}/change-status', [SujuListController::class, 'changeStatusFromList'])->name('suju-list.change-status');
 
     Route::post('/suju-list/{order}/accept', [SujuListController::class, 'accept'])->name('suju-list.accept');
     Route::post('/suju-list/{order}/reject', [SujuListController::class, 'reject'])->name('suju-list.reject');

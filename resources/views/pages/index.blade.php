@@ -124,14 +124,14 @@
                 <colgroup>
                     <col style="width:60px">
                     <col style="width:160px">
-                    <col style="width:130px">
+                    <col style="width:110px">
                     <col style="width:180px">
                     <col style="width:60px">
                     <col style="width:120px">
                     <col style="width:90px">
                     <col style="width:40px">
                     <col style="width:40px">
-                    <col style="width:66px">
+                    <col style="width:86px">
                 </colgroup>
                 <thead>
                 <tr>

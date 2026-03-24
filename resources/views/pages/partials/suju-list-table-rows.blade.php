@@ -149,17 +149,66 @@
                     <span class="color-gray300">{{ $order->receiver_relation }}</span>
                 @endif
             @else
+                @php
+                    $isAssignedOnly = !empty($order->receiver_shop_id)
+                        && in_array($order->current_status, ['submitted', 'assigned'], true);
+
+                    $isAdminAccepted = $order->current_status === 'accepted'
+                        && $order->accepted_by_type === 'admin';
+
+                    $isShopAccepted = $order->current_status === 'accepted'
+                        && $order->accepted_by_type === 'shop';
+
+                    $canComplete = $order->current_status === 'accepted';
+
+                    $selectedStatusValue = '';
+                    if ($isAdminAccepted || $isShopAccepted) {
+                        $selectedStatusValue = 'accepted';
+                    } elseif ($isAssignedOnly) {
+                        $selectedStatusValue = '';
+                    }
+                @endphp
+
                 <div class="extra-select">
-                    <select name="">
-                        <option>본부접수</option>
-                        <option>주문접수</option>
+                    <select
+                        name="status"
+                        class="js-suju-status-select"
+                        data-change-url="{{ route('suju-list.change-status', $order->order_no) }}"
+                        data-popup-url="{{ route('suju-list.complete-popup', $order->order_no) }}"
+                        data-prev-value="{{ $selectedStatusValue }}"
+                    >
+                        @if ($isAssignedOnly)
+                            <option value="" selected disabled>미확인</option>
+                            <option value="accepted">주문접수</option>
+                            <option value="rejected">주문거절</option>
+                            <option value="delivered">배송완료</option>
+
+                        @elseif ($isAdminAccepted)
+                            <option value="" selected disabled>본부접수</option>
+                            <option value="accepted">주문접수</option>
+                            <option value="rejected" disabled>주문거절</option>
+                            <option value="delivered">배송완료</option>
+
+                        @elseif ($isShopAccepted)
+                            <option value="accepted" selected>주문접수</option>
+                            <option value="rejected" disabled>주문거절</option>
+                            <option value="delivered">배송완료</option>
+
+                        @else
+                            <option value="accepted">주문접수</option>
+                            <option value="rejected">주문거절</option>
+                            <option value="delivered">배송완료</option>
+                        @endif
                     </select>
-                    <button type="button"
-                            class="btn btn-orange btn-complete-popup"
-                            data-popup-url="{{ route('suju-list.complete-popup', $order->order_no) }}"
-                            data-order-status="{{ $order->current_status }}">
-                        인수등록
-                    </button>
+
+                    @if ($canComplete)
+                        <button type="button"
+                                class="btn btn-orange btn-complete-popup"
+                                data-popup-url="{{ route('suju-list.complete-popup', $order->order_no) }}"
+                                data-order-status="{{ $order->current_status }}">
+                            인수등록
+                        </button>
+                    @endif
                 </div>
             @endif
         </td>

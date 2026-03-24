@@ -140,8 +140,15 @@
             }
 
             $(document).on('change', '#easy-view-toggle', function () {
-                $('#easy_view').val($(this).is(':checked') ? '1' : '0');
-                loadSujuList();
+                const isEasy = $(this).is(':checked') ? '1' : '0';
+                $('#easy_view').val(isEasy);
+
+                const currentUrl = new URL(window.location.href);
+                const params = currentUrl.searchParams;
+
+                params.set('easy_view', isEasy);
+
+                loadSujuList(currentUrl.pathname + '?' + params.toString());
             });
 
             $(document).on('change', '.filter-change', function () {
@@ -276,6 +283,81 @@
                 if (popup) {
                     popup.sujuListReturnUrl = window.location.href;
                 }
+            });
+
+            const csrfToken = @json(csrf_token());
+
+            $(document).on('focus mousedown', '.js-suju-status-select', function () {
+                $(this).data('prevIndex', this.selectedIndex);
+                $(this).data('prevValue', $(this).val());
+            });
+
+            $(document).on('change', '.js-suju-status-select', function (e) {
+                const $select = $(this);
+                const nextStatus = $select.val();
+                const changeUrl = $select.data('change-url');
+                const popupUrl = $select.data('popup-url');
+                const prevIndex = $select.data('prevIndex');
+
+                if (!nextStatus) {
+                    return;
+                }
+
+                if (nextStatus === 'delivered') {
+                    if (!popupUrl) {
+                        return;
+                    }
+
+                    window.open(
+                        popupUrl,
+                        'completePopup',
+                        'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                    );
+
+                    if (typeof prevIndex !== 'undefined') {
+                        this.selectedIndex = prevIndex;
+                    }
+
+                    return;
+                }
+
+                const confirmMessage = nextStatus === 'accepted'
+                    ? '주문접수로 변경하시겠습니까?'
+                    : '주문거절로 변경하시겠습니까?';
+
+                if (!confirm(confirmMessage)) {
+                    if (typeof prevIndex !== 'undefined') {
+                        this.selectedIndex = prevIndex;
+                    }
+                    return;
+                }
+
+                $.ajax({
+                    url: changeUrl,
+                    type: 'POST',
+                    data: {
+                        _token: csrfToken,
+                        status: nextStatus
+                    },
+                    success: function (res) {
+                        alert(res.message || '상태가 변경되었습니다.');
+
+                        const currentUrl = window.location.pathname + window.location.search;
+                        loadSujuList(currentUrl);
+                    },
+                    error: function (xhr) {
+                        let msg =
+                            xhr.responseJSON?.message ||
+                            xhr.responseJSON?.errors?.status?.[0] ||
+                            '상태 변경에 실패했습니다.';
+
+                        alert(msg);
+
+                        if (typeof prevIndex !== 'undefined') {
+                            $select.prop('selectedIndex', prevIndex);
+                        }
+                    }
+                });
             });
         });
     </script>
