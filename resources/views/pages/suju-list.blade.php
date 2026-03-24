@@ -21,6 +21,9 @@
 
     <div id="order-history-modal-area"></div>
 
+@endsection
+
+@push('scripts')
     <script>
         $(function () {
             let filterTimer = null;
@@ -361,4 +364,4 @@
             });
         });
     </script>
-@endsection
+@endpush

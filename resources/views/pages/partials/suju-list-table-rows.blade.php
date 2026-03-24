@@ -52,10 +52,10 @@
 
     <tr class="{{ $trClass }}">
         <td class="no-ellipsis">
-            <a href="{{ route('suju-list.popup', $order->order_no) }}"
-               class="color-blue suju-popup-link"
+            <a href="#none"
+               class="suju-popup-link"
                data-popup-url="{{ route('suju-list.popup', $order->order_no) }}">
-                {{ $order->order_no }}
+                <span class="color-blue">{{ $order->order_no }}</span>
             </a>
         </td>
 

@@ -156,86 +156,125 @@
         <div id="order-history-modal-area"></div>
     </div>
 
+@endsection
+@push('scripts')
     <script>
         $(function () {
-            const $slider = $('#mainBannerSlider');
-            if (!$slider.length) return;
-
-            const $track = $slider.find('.main-banner-track');
-            const $slides = $track.find('.main-banner-slide');
-            const slideCount = $slides.length;
-
-            if (slideCount <= 1) return;
-
-            let currentIndex = 0;
-
-            setInterval(function () {
-                currentIndex++;
-
-                if (currentIndex >= slideCount) {
-                    currentIndex = 0;
-                }
-
-                $track.css('transform', 'translateX(-' + (currentIndex * 100) + '%)');
-            }, 3000);
+            const csrfToken = @json(csrf_token());
 
             $(document).on('click', '.order-popup-link', function (e) {
                 e.preventDefault();
+
                 const url = $(this).data('popup-url') || $(this).attr('href');
-                window.open(url, 'orderPopup', 'width=1000,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no');
-            });
-
-            $(document).on('click', '.order-photo-popup-link', function (e) {
-                e.preventDefault();
-                const url = $(this).data('popup-url') || $(this).attr('href');
-                window.open(url, 'orderPhotoPopup', 'width=1000,height=800,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no');
-            });
-
-            $(document).on('click', '.order-complete-popup-link', function (e) {
-                e.preventDefault();
-                const url = $(this).data('popup-url') || $(this).attr('href');
-                window.open(url, 'sujuCompletePopup', 'width=1000,height=800,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no');
-            });
-
-            $(document).on('click', '.btn-order-history-modal', function (e) {
-                e.preventDefault();
-
-                const url = $(this).data('history-url');
-                if (!url) return;
-
-                $.ajax({
-                    url: url,
-                    method: 'GET',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    success: function (html) {
-                        $('#order-history-modal-area').html(html);
-                        $('#orderHistoryModal').show();
-                        $('body').addClass('overflow-hidden');
-                    },
-                    error: function () {
-                        alert('처리내역을 불러오지 못했습니다.');
-                    }
-                });
-            });
-
-            $(document).on('click', '.btn-close-order-history-modal', function () {
-                $('#orderHistoryModal').hide();
-                $('#order-history-modal-area').empty();
-                $('body').removeClass('overflow-hidden');
-            });
-
-            $(document).on('click', '.btn-point-charge-popup', function (e) {
-                e.preventDefault();
-
-                const url = $(this).data('popup-url');
                 if (!url) return;
 
                 window.open(
                     url,
-                    'pointChargePopup',
-                    'width=500,height=500,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                    'orderPopup',
+                    'width=1000,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
                 );
+            });
+
+            $(document).on('click', '.suju-popup-link', function (e) {
+                e.preventDefault();
+
+                const url = $(this).data('popup-url') || $(this).attr('href');
+                if (!url) return;
+
+                window.open(
+                    url,
+                    'sujuPopup',
+                    'width=1000,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
+            });
+
+            $(document).on('click', '.btn-complete-popup', function (e) {
+                e.preventDefault();
+
+                const popupUrl = $(this).data('popup-url');
+                const orderStatus = $(this).data('order-status');
+
+                if (orderStatus !== 'accepted') {
+                    alert('주문 접수 후 등록 가능합니다.');
+                    return;
+                }
+
+                if (!popupUrl) return;
+
+                window.open(
+                    popupUrl,
+                    'completePopup',
+                    'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                );
+            });
+
+            $(document).on('focus mousedown', '.js-suju-status-select', function () {
+                $(this).data('prevIndex', this.selectedIndex);
+            });
+
+            $(document).on('change', '.js-suju-status-select', function () {
+                const $select = $(this);
+                const nextStatus = $select.val();
+                const changeUrl = $select.data('change-url');
+                const popupUrl = $select.data('popup-url');
+                const prevIndex = $select.data('prevIndex');
+
+                if (!nextStatus) {
+                    return;
+                }
+
+                if (nextStatus === 'delivered') {
+                    if (popupUrl) {
+                        window.open(
+                            popupUrl,
+                            'completePopup',
+                            'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                        );
+                    }
+
+                    if (typeof prevIndex !== 'undefined') {
+                        this.selectedIndex = prevIndex;
+                    }
+
+                    return;
+                }
+
+                const confirmMessage = nextStatus === 'accepted'
+                    ? '주문접수로 변경하시겠습니까?'
+                    : '주문거절로 변경하시겠습니까?';
+
+                if (!confirm(confirmMessage)) {
+                    if (typeof prevIndex !== 'undefined') {
+                        this.selectedIndex = prevIndex;
+                    }
+                    return;
+                }
+
+                $.ajax({
+                    url: changeUrl,
+                    type: 'POST',
+                    data: {
+                        _token: csrfToken,
+                        status: nextStatus
+                    },
+                    success: function (res) {
+                        alert(res.message || '상태가 변경되었습니다.');
+                        window.location.reload();
+                    },
+                    error: function (xhr) {
+                        const msg =
+                            xhr.responseJSON?.message ||
+                            xhr.responseJSON?.errors?.status?.[0] ||
+                            '상태 변경에 실패했습니다.';
+
+                        alert(msg);
+
+                        if (typeof prevIndex !== 'undefined') {
+                            $select.prop('selectedIndex', prevIndex);
+                        }
+                    }
+                });
             });
         });
     </script>
-@endsection
+@endpush
