@@ -91,6 +91,8 @@ class SujuListController extends Controller
         $summaryCount = (clone $query)->count();
         $summaryAmount = (clone $query)->sum('payment_amount');
 
+        $isEasyView = $request->boolean('easy_view');
+
         $data = compact(
             'orders',
             'summaryCount',
@@ -100,11 +102,17 @@ class SujuListController extends Controller
             'productName',
             'orderNo',
             'deliveryAddr1',
-            'recipientName'
+            'recipientName',
+            'isEasyView'
         );
 
         if ($request->ajax()) {
-            return view('pages.partials.suju-list-table', $data);
+            return view(
+                $isEasyView
+                    ? 'pages.partials.suju-list-easy-table'
+                    : 'pages.partials.suju-list-table',
+                $data
+            );
         }
 
         return view('pages.suju-list', $data);

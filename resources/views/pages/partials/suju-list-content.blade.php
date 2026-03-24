@@ -65,6 +65,7 @@
 
     <section class="mt30">
         <form method="GET" action="{{ route('suju-list') }}" id="suju-filter-form">
+            <input type="hidden" name="easy_view" id="easy_view" value="{{ !empty($isEasyView) ? '1' : '0' }}">
             <table class="table-data style2">
                 <colgroup>
                     <col style="width:100px">

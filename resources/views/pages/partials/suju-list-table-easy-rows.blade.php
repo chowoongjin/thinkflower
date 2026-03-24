@@ -75,9 +75,6 @@
         </td>
 
         <td>
-            {{ $order->ribbon_phrase }}
-        </td>
-        <td>
             {{ $order->recipient_name }}
         </td>
         <td>
@@ -131,10 +128,6 @@
         <td class="fs13">
             @if ($order->current_status === 'delivered')
                 {{ $order->receiver_name ?: '미입력' }}
-                @if (!empty($order->receiver_relation))
-                    <br>
-                    <span class="color-gray300">{{ $order->receiver_relation }}</span>
-                @endif
             @else
                 <div class="extra-select">
                     <select name="">

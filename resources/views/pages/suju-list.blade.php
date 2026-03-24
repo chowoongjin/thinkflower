@@ -10,7 +10,11 @@
             @include('pages.partials.suju-list-content')
 
             <div id="suju-list-result">
-                @include('pages.partials.suju-list-table')
+                @if (!empty($isEasyView))
+                    @include('pages.partials.suju-list-easy-table')
+                @else
+                    @include('pages.partials.suju-list-table')
+                @endif
             </div>
         </div>
     </div>
@@ -21,6 +25,12 @@
         $(function () {
             let filterTimer = null;
             let currentAjax = null;
+
+
+            function syncEasyToggle() {
+                const isEasy = $('#easy_view').val() === '1';
+                $('#easy-view-toggle').prop('checked', isEasy);
+            }
 
             function pad2(num) {
                 return String(num).padStart(2, '0');
@@ -103,6 +113,7 @@
                         $('#suju-list-result').html(html);
                         bindDatepicker();
                         syncQuickRangeRadio();
+                        syncEasyToggle();
 
                         if (!urlOverride) {
                             window.history.replaceState({}, '', url + '?' + data);
@@ -121,13 +132,17 @@
                     }
                 });
             }
-
             function scheduleLoad(delay = 400) {
                 clearTimeout(filterTimer);
                 filterTimer = setTimeout(function () {
                     loadSujuList();
                 }, delay);
             }
+
+            $(document).on('change', '#easy-view-toggle', function () {
+                $('#easy_view').val($(this).is(':checked') ? '1' : '0');
+                loadSujuList();
+            });
 
             $(document).on('change', '.filter-change', function () {
                 scheduleLoad(200);
@@ -178,6 +193,7 @@
 
             bindDatepicker();
             syncQuickRangeRadio();
+            syncEasyToggle();
 
             $(document).on('click', '.suju-popup-link', function (e) {
                 e.preventDefault();

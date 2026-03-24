@@ -13,7 +13,7 @@
         <col style="width:120px">
         <col style="width:90px">
         <col style="width:40px">
-        <col style="width:70px">
+        <col style="width:85px">
     </colgroup>
     <thead>
     <tr>
@@ -21,7 +21,7 @@
         <th>배송요구일</th>
         <th>배송지(간편)</th>
         <th>보내는 문구</th>
-        <th>받는사람</th>
+        <th>받는분</th>
         <th>상세정보</th>
         <th>결제금액</th>
         <th>사진</th>
