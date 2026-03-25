@@ -223,6 +223,52 @@
                 return;
             }
 
+            // 중개리스트에서 연 수주사 선택 팝업 전용 처리
+            if (meta.popupSource === "mediation-list" && meta.orderId) {
+                if (!confirm('해당 수주사로 선택하시겠습니까?\n\n' + shopDisplayName)) {
+                    $radio.prop('checked', false);
+                    return;
+                }
+
+                const url = meta.assignUrlTemplate.replace('__ORDER_ID__', meta.orderId);
+
+                $.ajax({
+                    url: url,
+                    method: 'POST',
+                    data: {
+                        _token: meta.csrf,
+                        receiver_shop_id: shopId
+                    },
+                    success: function (res) {
+                        alert(res.message || '수주사가 선택되었습니다.');
+
+                        if (window.opener && !window.opener.closed) {
+                            if (window.opener.$ && window.opener.$('#mediation-list-filter-form').length) {
+                                window.opener.$('#mediation-list-filter-form').trigger('submit');
+                            } else if (typeof window.opener.refreshMediationListPreserveQuery === 'function') {
+                                window.opener.refreshMediationListPreserveQuery();
+                            } else {
+                                window.opener.location.reload();
+                            }
+                        }
+
+                        window.close();
+                    },
+                    error: function (xhr) {
+                        $radio.prop('checked', false);
+
+                        let message = '수주사 선택 처리 중 오류가 발생했습니다.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+
+                        alert(message);
+                    }
+                });
+
+                return;
+            }
+
             // 기존 공용 팝업 처리
             if (target === "receiver2") {
                 if (!confirm('선택한 수주사로 지정하시겠습니까?\n확인을 누르시면 바로 수주사가 지정됩니다.')) {
