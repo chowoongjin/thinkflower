@@ -178,45 +178,58 @@ class AllOrderListController extends Controller
     {
         $validated = $request->validate([
             'receiver_shop_id' => ['required', 'integer', 'exists:shops,id'],
+            'admin_accept' => ['nullable', 'in:1'],
+        ], [
+            'receiver_shop_id.required' => '수주사를 선택해 주세요.',
+            'receiver_shop_id.exists' => '존재하지 않는 수주사입니다.',
         ]);
 
-        $adminUser = $request->user();
-        $fromStatus = $order->current_status;
+        DB::transaction(function () use ($request, $order, $validated) {
+            $order->refresh();
 
-        $order->update([
-            'receiver_shop_id' => $validated['receiver_shop_id'],
-            'assigned_by_admin_user_id' => $adminUser->id,
-            'brokerage_type' => 'assigned',
-            'current_status' => 'submitted',
-            'accepted_at' => null,
-            'accepted_by_type' => null,
-            'delivered_at' => null,
-            'receiver_name' => null,
-            'receiver_relation' => null,
-        ]);
+            $oldStatus = $order->current_status;
+            $receiverShopId = (int) $validated['receiver_shop_id'];
+            $adminAccept = (string) ($validated['admin_accept'] ?? '') === '1';
 
-        DB::table('order_histories')->insert([
-            'order_id' => $order->id,
-            'order_no' => $order->order_no,
-            'history_type' => 'updated',
-            'message' => '<strong>본부 수발주사업부</strong> 에서 수주사 중개 시작',
-            'processed_at' => now(),
-            'actor_user_id' => $adminUser->id,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+            $updateData = [
+                'receiver_shop_id' => $receiverShopId,
+                'brokerage_type' => 'assigned',
+            ];
 
-        DB::table('order_status_logs')->insert([
-            'order_id' => $order->id,
-            'from_status' => $fromStatus,
-            'to_status' => 'submitted',
-            'changed_by_user_id' => $adminUser->id,
-            'memo' => '본부 수주사 지정',
-            'created_at' => now(),
-        ]);
+            if ($adminAccept) {
+                $updateData['current_status'] = 'accepted';
+                $updateData['accepted_at'] = now();
+                $updateData['accepted_by_type'] = 'admin';
+            }
+
+            $order->update($updateData);
+
+            DB::table('order_histories')->insert([
+                'order_id' => $order->id,
+                'order_no' => $order->order_no,
+                'history_type' => $adminAccept ? 'accepted' : 'updated',
+                'message' => '<strong>본부 수발주사업부</strong> 에서 주문접수 처리',
+                'processed_at' => now(),
+                'actor_user_id' => auth()->id(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::table('order_status_logs')->insert([
+                'order_id' => $order->id,
+                'from_status' => $oldStatus,
+                'to_status' => $adminAccept ? 'accepted' : $oldStatus,
+                'changed_by_user_id' => auth()->id(),
+                'memo' => $adminAccept ? '관리자 본부접수 처리' : '관리자 수주사 지정',
+                'created_at' => now(),
+            ]);
+        });
 
         return response()->json([
             'success' => true,
+            'message' => ((string) ($validated['admin_accept'] ?? '') === '1')
+                ? '수주사 지정 및 본부접수가 완료되었습니다.'
+                : '수주사가 지정되었습니다.',
         ]);
     }
     public function accept(Request $request, Order $order)
@@ -388,14 +401,16 @@ class AllOrderListController extends Controller
 
         $validated = $request->validate([
             'completed_date' => ['required', 'date'],
-            'completed_hour' => ['required', 'integer', 'between:0,23'],
+            'completed_hour' => ['required', 'in:00,01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23'],
             'completed_minute' => ['required', 'in:00,10,20,30,40,50'],
             'receiver_name' => ['required', 'string', 'max:100'],
             'receiver_relation' => ['nullable', 'string', 'max:50'],
         ], [
             'completed_date.required' => '배송완료일을 입력해 주세요.',
             'completed_hour.required' => '배송완료시간을 선택해 주세요.',
+            'completed_hour.in' => '배송완료시간 형식이 올바르지 않습니다.',
             'completed_minute.required' => '배송완료분을 선택해 주세요.',
+            'completed_minute.in' => '배송완료분 형식이 올바르지 않습니다.',
             'receiver_name.required' => '인수자를 입력해 주세요.',
         ]);
 

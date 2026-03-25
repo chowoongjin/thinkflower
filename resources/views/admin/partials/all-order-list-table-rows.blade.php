@@ -96,12 +96,65 @@
             {{ number_format((int) $order->original_amount) }}원<br>
             <b class="color-green">{{ number_format((int) $order->order_amount) }}원</b>
         </td>
-        <td class="align-center">
-            <select name="" class="select {{ $statusSelectClass }}">
-                <option {{ $statusLabel === '주문접수' ? 'selected' : '' }}>주문접수</option>
-                <option {{ $statusLabel === '본부접수' ? 'selected' : '' }}>본부접수</option>
-                <option {{ $statusLabel === '중개필요' ? 'selected' : '' }}>중개필요</option>
-                <option {{ $statusLabel === '배송완료' ? 'selected' : '' }}>배송완료</option>
+        @php
+            $isDelivered = $order->current_status === 'delivered';
+            $isAdminAccepted = $order->current_status === 'accepted' && $order->accepted_by_type === 'admin';
+            $isShopAccepted = $order->current_status === 'accepted' && $order->accepted_by_type === 'shop';
+            $isWaiting = !$isDelivered && !$isAdminAccepted && !$isShopAccepted;
+
+            $hasReceiver = !empty($order->receiver_shop_id) && (int) $order->receiver_shop_id !== 0;
+
+            $statusSelectClass = '';
+            if ($isDelivered) {
+                $statusSelectClass = 'success';
+            } elseif ($isWaiting) {
+                $statusSelectClass = 'active';
+            }
+        @endphp
+
+        <td>
+            <select
+                class="select {{ $statusSelectClass }} js-admin-order-status"
+                data-order-no="{{ $order->order_no }}"
+                data-has-receiver="{{ $hasReceiver ? '1' : '0' }}"
+                data-accept-url="{{ route('admin.all-order-list.accept', $order->order_no) }}"
+                data-complete-url="{{ route('admin.all-order-list.complete-popup', [
+                    'order' => $order->order_no,
+                    'return_url' => request()->fullUrl(),
+                ]) }}"
+                            data-select-receiver-url="{{ route('admin.member-list-popup', [
+                    'target' => 'receiver2',
+                    'source' => 'all-order-list',
+                    'order_id' => $order->id,
+                    'order_no' => $order->order_no,
+                    'return_url' => request()->fullUrl(),
+                ]) }}"
+                @if ($isDelivered) disabled @endif
+            >
+                @if ($isDelivered)
+                    <option value="delivered" selected>배송완료</option>
+                    <option value="admin_accepted" disabled>본부접수</option>
+                    <option value="shop_accepted" disabled>주문접수</option>
+                    <option value="waiting" disabled>중개필요</option>
+
+                @elseif ($isAdminAccepted)
+                    <option value="admin_accepted" selected>본부접수</option>
+                    <option value="shop_accepted" disabled>주문접수</option>
+                    <option value="waiting">중개필요</option>
+                    <option value="delivered">배송완료</option>
+
+                @elseif ($isShopAccepted)
+                    <option value="shop_accepted" selected>주문접수</option>
+                    <option value="admin_accepted" disabled>본부접수</option>
+                    <option value="waiting">중개필요</option>
+                    <option value="delivered">배송완료</option>
+
+                @else
+                    <option value="waiting" selected>중개필요</option>
+                    <option value="admin_accepted">본부접수</option>
+                    <option value="shop_accepted" disabled>주문접수</option>
+                    <option value="delivered" disabled>배송완료</option>
+                @endif
             </select>
         </td>
         <td>
@@ -119,6 +172,17 @@
                     data-photo-url="{{ route('admin.all-order-list.photo-popup', $order) }}"
                 >
                     <img src="{{ asset('adm/assets/img/ico_photo_on.png') }}" height="18">
+                </button>
+            @elseif ($order->current_status === 'delivered')
+                <button
+                    type="button"
+                    class="btn-complete-popup"
+                    data-complete-url="{{ route('admin.all-order-list.complete-popup', [
+                'order' => $order->order_no,
+                'return_url' => request()->fullUrl(),
+            ]) }}"
+                >
+                    <img src="{{ asset('adm/assets/img/ico_photo_off.png') }}" height="18">
                 </button>
             @else
                 <button type="button" disabled>

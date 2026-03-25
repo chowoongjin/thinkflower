@@ -19,6 +19,8 @@
         <div id="modal-content"></div>
     </div>
 
+@endsection
+@push('scripts')
     <script>
         $(function () {
             function pad2(num) {
@@ -216,6 +218,118 @@
                     'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
                 );
             });
+
+            const csrfToken = @json(csrf_token());
+
+            $(document).on('focus mousedown', '.js-admin-order-status', function () {
+                $(this).data('prevIndex', this.selectedIndex);
+                $(this).data('prevValue', $(this).val());
+            });
+
+            $(document).on('change', '.js-admin-order-status', function () {
+                const $select = $(this);
+                const nextValue = $select.val();
+                const prevIndex = $select.data('prevIndex');
+                const prevValue = $select.data('prevValue');
+
+                const hasReceiver = String($select.data('has-receiver')) === '1';
+                const acceptUrl = $select.data('accept-url');
+                const completeUrl = $select.data('complete-url');
+                const selectReceiverUrl = $select.data('select-receiver-url');
+
+                function restoreSelect() {
+                    if (typeof prevIndex !== 'undefined') {
+                        $select.prop('selectedIndex', prevIndex);
+                    } else if (typeof prevValue !== 'undefined') {
+                        $select.val(prevValue);
+                    }
+                }
+
+                if (!nextValue) {
+                    restoreSelect();
+                    return;
+                }
+
+                // 배송완료 선택 -> 배송완료 팝업
+                if (nextValue === 'delivered') {
+                    if (!completeUrl) {
+                        restoreSelect();
+                        return;
+                    }
+
+                    window.open(
+                        completeUrl,
+                        'completePopup',
+                        'width=715,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                    );
+
+                    restoreSelect();
+                    return;
+                }
+
+                // 주문접수는 관리자 페이지에서 직접 변경 불가, 표시용만 사용
+                if (nextValue === 'shop_accepted') {
+                    alert('주문접수는 수주사가 주문수락한 경우에만 표시됩니다.');
+                    restoreSelect();
+                    return;
+                }
+
+                // 본부접수
+                if (nextValue === 'admin_accepted') {
+                    // 수주사 없으면 수주사 선택 팝업
+                    if (!hasReceiver) {
+                        if (!selectReceiverUrl) {
+                            alert('수주사 선택 팝업 경로를 확인해 주세요.');
+                            restoreSelect();
+                            return;
+                        }
+
+                        window.open(
+                            selectReceiverUrl,
+                            'receiverPopup',
+                            'width=1000,height=890,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
+                        );
+
+                        restoreSelect();
+                        return;
+                    }
+
+                    if (!confirm('본부접수로 변경하시겠습니까?')) {
+                        restoreSelect();
+                        return;
+                    }
+
+                    $.ajax({
+                        url: acceptUrl,
+                        type: 'POST',
+                        data: {
+                            _token: csrfToken
+                        },
+                        success: function (res) {
+                            alert(res.message || '본부접수 처리되었습니다.');
+                            window.location.reload();
+                        },
+                        error: function (xhr) {
+                            const msg =
+                                xhr.responseJSON?.message ||
+                                '본부접수 처리에 실패했습니다.';
+
+                            alert(msg);
+                            restoreSelect();
+                        }
+                    });
+
+                    return;
+                }
+
+                // 중개필요는 표시만 하고 직접 변경은 막음
+                if (nextValue === 'waiting') {
+                    restoreSelect();
+                    return;
+                }
+
+                restoreSelect();
+            });
         });
     </script>
-@endsection
+@endpush

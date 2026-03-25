@@ -25,6 +25,8 @@
                 <input type="hidden" name="product_filter" id="product_filter" value="{{ $productFilter ?? '전체' }}">
                 <input type="hidden" name="source" value="{{ $popupSource ?? '' }}">
                 <input type="hidden" name="order_id" value="{{ $orderId ?? '' }}">
+                <input type="hidden" name="order_no" value="{{ request('order_no') }}">
+                <input type="hidden" name="return_url" value="{{ request('return_url') }}">
 
                 <div class="row">
                     <h2 class="fw600">상품필터</h2>
@@ -88,7 +90,10 @@
         target: @json($target ?? 'receiver'),
         popupSource: @json($popupSource ?? ''),
         orderId: @json($orderId ?? null),
+        orderNo: @json(request('order_no')),
+        returnUrl: @json(request('return_url')),
         assignUrlTemplate: @json(route('admin.mediation-list.assign-receiver', ['order' => '__ORDER_ID__'])),
+        allOrderAssignUrlTemplate: @json(route('admin.all-order-list.assign-receiver', ['order' => '__ORDER_NO__'])),
         csrf: @json(csrf_token())
     };
 </script>
@@ -172,27 +177,30 @@
             const meta = window.memberPopupMeta || {};
 
             // 중개리스트에서 연 수주사 선택 팝업 전용 처리
-            if (meta.popupSource === "mediation-list" && meta.orderId) {
+            // 전체수발주리스트에서 연 수주사 선택 팝업 전용 처리
+            if (meta.popupSource === "all-order-list" && meta.orderNo) {
                 if (!confirm('해당 수주사로 선택하시겠습니까?\n\n' + shopDisplayName)) {
                     $radio.prop('checked', false);
                     return;
                 }
 
-                const url = meta.assignUrlTemplate.replace('__ORDER_ID__', meta.orderId);
+                const url = meta.allOrderAssignUrlTemplate.replace('__ORDER_NO__', meta.orderNo);
 
                 $.ajax({
                     url: url,
                     method: 'POST',
                     data: {
                         _token: meta.csrf,
-                        receiver_shop_id: shopId
+                        receiver_shop_id: shopId,
+                        return_url: meta.returnUrl || '',
+                        admin_accept: 1
                     },
                     success: function (res) {
                         alert(res.message || '수주사가 선택되었습니다.');
 
                         if (window.opener && !window.opener.closed) {
-                            if (window.opener.$ && window.opener.$('#mediation-list-filter-form').length) {
-                                window.opener.$('#mediation-list-filter-form').trigger('submit');
+                            if (window.opener.$ && window.opener.$('#all-order-list-filter-form').length) {
+                                window.opener.$('#all-order-list-filter-form').trigger('submit');
                             } else {
                                 window.opener.location.reload();
                             }
@@ -251,14 +259,6 @@
 
             window.close();
         });
-
-        window.memberPopupMeta = {
-            target: @json($target ?? 'receiver'),
-            popupSource: @json($popupSource ?? ''),
-            orderId: @json($orderId ?? null),
-            assignUrlTemplate: @json(route('admin.mediation-list.assign-receiver', ['order' => '__ORDER_ID__'])),
-            csrf: @json(csrf_token()),
-        };
 
         function assignReceiverFromMediation(shopId, shopName) {
             const meta = window.memberPopupMeta || {};

@@ -126,4 +126,6 @@
 
 </body>
 </html>
+@stack('styles')
+@stack('scripts')
 @include('partials.loading-modal')
