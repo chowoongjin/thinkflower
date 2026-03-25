@@ -52,6 +52,7 @@ class SujuListController extends Controller
             ->with(['receiverShop', 'ordererShop'])
             ->withCount('photos')
             ->where('receiver_shop_id', $shop->id)
+            ->where('is_hidden', 0)
             ->whereDate('delivery_date', '>=', $dateFrom)
             ->whereDate('delivery_date', '<=', $dateTo);
 
@@ -123,6 +124,7 @@ class SujuListController extends Controller
         $shop = $request->user()?->shop;
 
         abort_unless($shop, 403);
+        abort_if((int) $order->is_hidden === 1, 404);
 
         $popupState = null;
 
@@ -159,6 +161,7 @@ class SujuListController extends Controller
 
         abort_unless($shop, 403);
         abort_unless((int) $order->receiver_shop_id === (int) $shop->id, 403);
+        abort_if((int) $order->is_hidden === 1, 404);
 
         $histories = $order->histories()
             ->orderBy('processed_at')
@@ -288,6 +291,7 @@ class SujuListController extends Controller
 
         abort_unless($shop, 403);
         abort_unless((int) $order->receiver_shop_id === (int) $shop->id, 403);
+        abort_if((int) $order->is_hidden === 1, 404);
 
         $order->load([
             'ordererShop',
@@ -324,6 +328,7 @@ class SujuListController extends Controller
     {
         $user = $request->user();
         abort_unless($user, 403);
+        abort_if((int) $order->is_hidden === 1, 404);
 
         $validated = $request->validate([
             'completed_date' => ['required', 'date'],
@@ -552,6 +557,7 @@ class SujuListController extends Controller
 
         abort_unless($shop, 403);
         abort_unless((int) $order->receiver_shop_id === (int) $shop->id, 403);
+        abort_if((int) $order->is_hidden === 1, 404);
 
         $photos = DB::table('order_photos')
             ->where('order_id', $order->id)

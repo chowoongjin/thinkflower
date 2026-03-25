@@ -45,6 +45,12 @@ class AllOrderListController extends Controller
             ->whereDate('delivery_date', '>=', $dateFrom)
             ->whereDate('delivery_date', '<=', $dateTo);
 
+        if ($statusType === '삭제처리') {
+            $query->where('is_hidden', 1);
+        } else {
+            $query->where('is_hidden', 0);
+        }
+
         if ($productType !== '' && $productType !== '전체상품') {
             if ($productType === '근조화환') {
                 $query->where(function ($q) {
@@ -70,8 +76,6 @@ class AllOrderListController extends Controller
                 $query->where('current_status', 'delivered');
             } elseif ($statusType === '주문취소') {
                 $query->where('current_status', 'cancelled');
-            } elseif ($statusType === '삭제처리') {
-                $query->onlyTrashed();
             }
         }
 
@@ -121,23 +125,10 @@ class AllOrderListController extends Controller
 
         return view('admin.all-order-list', $data);
     }
-    public function ordererShop()
-    {
-        return $this->belongsTo(Shop::class, 'orderer_shop_id');
-    }
-
-    public function receiverShop()
-    {
-        return $this->belongsTo(Shop::class, 'receiver_shop_id');
-    }
-
-    public function photos()
-    {
-        return $this->hasMany(OrderPhoto::class, 'order_id');
-    }
 
     public function popup(Order $order)
     {
+        abort_if((int) $order->is_hidden === 1, 404);
         $order->load([
             'ordererShop',
             'receiverShop',
@@ -150,6 +141,7 @@ class AllOrderListController extends Controller
 
     public function historyModal(Order $order)
     {
+        abort_if((int) $order->is_hidden === 1, 404);
         $histories = $order->histories()
             ->orderBy('processed_at')
             ->orderBy('id')
@@ -163,6 +155,7 @@ class AllOrderListController extends Controller
 
     public function photoPopup(Order $order)
     {
+        abort_if((int) $order->is_hidden === 1, 404);
         $photos = DB::table('order_photos')
             ->where('order_id', $order->id)
             ->orderBy('sort_order')
@@ -357,6 +350,7 @@ class AllOrderListController extends Controller
 
     public function completePopup(Request $request, Order $order)
     {
+        abort_if((int) $order->is_hidden === 1, 404);
         $user = $request->user();
         abort_unless($user && in_array($user->role, ['admin', 'hq'], true), 403);
 
@@ -615,6 +609,174 @@ class AllOrderListController extends Controller
             'pending_fields' => $pendingTasks,
         ]);
     }
+
+    public function cancel(Request $request, Order $order)
+    {
+        $adminUser = $request->user();
+        abort_unless($adminUser && in_array($adminUser->role, ['admin', 'hq'], true), 403);
+
+        DB::transaction(function () use ($order, $adminUser) {
+            $lockedOrder = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if ($lockedOrder->current_status === 'cancelled') {
+                throw ValidationException::withMessages([
+                    'order' => '이미 주문취소 처리된 주문입니다.',
+                ]);
+            }
+
+            $fromStatus = $lockedOrder->current_status;
+
+            $ordererShop = $lockedOrder->orderer_shop_id
+                ? Shop::where('id', $lockedOrder->orderer_shop_id)->lockForUpdate()->first()
+                : null;
+
+            $receiverShop = $lockedOrder->receiver_shop_id
+                ? Shop::where('id', $lockedOrder->receiver_shop_id)->lockForUpdate()->first()
+                : null;
+
+            $refundAmount = (int) ($lockedOrder->payment_amount ?? $lockedOrder->order_amount ?? 0);
+
+            if ($refundAmount < 0) {
+                $refundAmount = 0;
+            }
+
+            // 1) 발주사 포인트 환불
+            if ($ordererShop && $refundAmount > 0) {
+                $alreadyRefunded = DB::table('point_transactions')
+                    ->where('order_id', $lockedOrder->id)
+                    ->where('shop_id', $ordererShop->id)
+                    ->where('transaction_type', 'order_cancel_refund')
+                    ->exists();
+
+                if (!$alreadyRefunded) {
+                    $beforeBalance = (int) $ordererShop->current_point_balance;
+                    $afterBalance = $beforeBalance + $refundAmount;
+
+                    $ordererShop->update([
+                        'current_point_balance' => $afterBalance,
+                    ]);
+
+                    DB::table('point_transactions')->insert([
+                        'shop_id' => $ordererShop->id,
+                        'user_id' => $adminUser->id,
+                        'order_id' => $lockedOrder->id,
+                        'payment_transaction_id' => null,
+                        'transaction_no' => $this->generatePointTransactionNo(),
+                        'transaction_type' => 'order_cancel_refund',
+                        'direction' => 'in',
+                        'amount' => $refundAmount,
+                        'balance_before' => $beforeBalance,
+                        'balance_after' => $afterBalance,
+                        'summary' => '주문취소 포인트 환불',
+                        'description' => '주문번호 ' . $lockedOrder->order_no . ' 발주사 환불',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+
+            // 2) 배송완료건이면 수주사 포인트 회수
+            if ($lockedOrder->current_status === 'delivered' && $receiverShop) {
+                $creditedAmount = (int) ($lockedOrder->point_earned_amount ?? 0);
+
+                if ($creditedAmount <= 0) {
+                    $creditedAmount = (int) ($lockedOrder->order_amount ?? 0);
+                }
+
+                if ($creditedAmount > 0) {
+                    $alreadyReversed = DB::table('point_transactions')
+                        ->where('order_id', $lockedOrder->id)
+                        ->where('shop_id', $receiverShop->id)
+                        ->where('transaction_type', 'order_credit_cancel')
+                        ->exists();
+
+                    if (!$alreadyReversed) {
+                        $beforeBalance = (int) $receiverShop->current_point_balance;
+                        $afterBalance = max(0, $beforeBalance - $creditedAmount);
+
+                        $receiverShop->update([
+                            'current_point_balance' => $afterBalance,
+                        ]);
+
+                        DB::table('point_transactions')->insert([
+                            'shop_id' => $receiverShop->id,
+                            'user_id' => $adminUser->id,
+                            'order_id' => $lockedOrder->id,
+                            'payment_transaction_id' => null,
+                            'transaction_no' => $this->generatePointTransactionNo(),
+                            'transaction_type' => 'order_credit_cancel',
+                            'direction' => 'out',
+                            'amount' => $creditedAmount,
+                            'balance_before' => $beforeBalance,
+                            'balance_after' => $afterBalance,
+                            'summary' => '주문취소 포인트 회수',
+                            'description' => '주문번호 ' . $lockedOrder->order_no . ' 수주사 회수',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
+            }
+
+            // 3) 주문 상태 취소 처리
+            $lockedOrder->update([
+                'current_status' => 'cancelled',
+            ]);
+
+            OrderHistory::create([
+                'order_id' => $lockedOrder->id,
+                'order_no' => $lockedOrder->order_no,
+                'history_type' => 'cancelled',
+                'message' => '<strong>본부 수발주사업부</strong> 에서 주문취소 처리',
+                'processed_at' => now(),
+                'actor_user_id' => $adminUser->id,
+            ]);
+
+            DB::table('order_status_logs')->insert([
+                'order_id' => $lockedOrder->id,
+                'from_status' => $fromStatus,
+                'to_status' => 'cancelled',
+                'changed_by_user_id' => $adminUser->id,
+                'memo' => '관리자 주문취소 처리',
+                'created_at' => now(),
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => '주문취소 처리되었습니다.',
+        ]);
+    }
+
+    public function hide(Request $request, Order $order)
+    {
+        $adminUser = $request->user();
+
+        abort_unless($adminUser && in_array($adminUser->role, ['admin', 'hq'], true), 403);
+
+        $affected = DB::table('orders')
+            ->where('id', $order->id)
+            ->where('is_hidden', 0)
+            ->update([
+                'is_hidden' => 1,
+                'hidden_at' => now(),
+                'hidden_by_admin_user_id' => $adminUser->id,
+                'updated_at' => now(),
+            ]);
+
+        if ($affected === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => '이미 삭제 처리되었거나 숨김 처리에 실패했습니다.',
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => '주문서가 삭제 처리되었습니다.',
+        ]);
+    }
+
     protected function makeShopDisplayName(?Shop $shop): string
     {
         if (!$shop) {

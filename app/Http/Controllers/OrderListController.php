@@ -25,6 +25,7 @@ class OrderListController extends Controller
             ->with(['ordererShop', 'receiverShop'])
             ->withCount('photos')
             ->where('created_user_id', $user->id)
+            ->where('is_hidden', 0)
             ->whereDate('delivery_date', '>=', $dateFrom)
             ->whereDate('delivery_date', '<=', $dateTo);
 
@@ -92,6 +93,7 @@ class OrderListController extends Controller
     public function popup(Request $request, Order $order)
     {
         abort_unless($order->created_user_id === $request->user()->id, 403);
+        abort_if((int) $order->is_hidden === 1, 404);
 
         $order->load([
             'ordererShop',
@@ -107,6 +109,7 @@ class OrderListController extends Controller
     public function historyModal(Request $request, Order $order)
     {
         abort_unless($order->created_user_id === $request->user()->id, 403);
+        abort_if((int) $order->is_hidden === 1, 404);
 
         $histories = $order->histories()
             ->orderBy('processed_at')
@@ -122,6 +125,7 @@ class OrderListController extends Controller
     public function photoPopup(Request $request, Order $order)
     {
         abort_unless($order->created_user_id === $request->user()->id, 403);
+        abort_if((int) $order->is_hidden === 1, 404);
 
         $photos = DB::table('order_photos')
             ->where('order_id', $order->id)

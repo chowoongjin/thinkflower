@@ -40,16 +40,19 @@ class HomeController extends Controller
         if ($shop) {
             $waitingOrderCount = Order::query()
                 ->where('orderer_shop_id', $shop->id)
+                ->where('is_hidden', 0)
                 ->where('brokerage_type', 'waiting')
                 ->count();
 
             $acceptedReceiveCount = Order::query()
                 ->where('receiver_shop_id', $shop->id)
+                ->where('is_hidden', 0)
                 ->where('current_status', 'accepted')
                 ->count();
 
             $uncheckedReceiveCount = Order::query()
                 ->where('receiver_shop_id', $shop->id)
+                ->where('is_hidden', 0)
                 ->where('current_status', 'submitted')
                 ->count();
 
@@ -57,6 +60,7 @@ class HomeController extends Controller
                 ->with(['ordererShop', 'receiverShop'])
                 ->withCount('photos')
                 ->where('orderer_shop_id', $shop->id)
+                ->where('is_hidden', 0)
                 ->orderByDesc('created_at')
                 ->limit(5)
                 ->get();
@@ -65,6 +69,7 @@ class HomeController extends Controller
                 ->with(['ordererShop', 'receiverShop'])
                 ->withCount('photos')
                 ->where('receiver_shop_id', $shop->id)
+                ->where('is_hidden', 0)
                 ->orderByDesc('created_at')
                 ->limit(5)
                 ->get();

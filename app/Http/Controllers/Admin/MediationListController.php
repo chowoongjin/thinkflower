@@ -29,6 +29,7 @@ class MediationListController extends Controller
 
         $query = Order::query()
             ->with(['ordererShop', 'receiverShop'])
+            ->where('is_hidden', 0)
             ->where(function ($q) {
                 $q->whereNull('receiver_shop_id')
                     ->orWhere('receiver_shop_id', 0);
@@ -97,6 +98,7 @@ class MediationListController extends Controller
 
     public function popup(Order $order)
     {
+        abort_if((int) $order->is_hidden === 1, 404);
         return view('admin.all-order-popup', compact('order'));
     }
 

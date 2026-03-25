@@ -81,7 +81,7 @@ if ($order->delivery_date) {
                             배송완료처리
                         </button>
                         <button type="button"
-                                class="btn btn-order-status-action"
+                                class="btn btn-order-status-action btn-cancel"
                                 data-action="cancel">
                             주문취소
                         </button>
@@ -96,8 +96,8 @@ if ($order->delivery_date) {
 
             <ul class="list-column-4" id="adminBtns">
                 <li><button type="button" class="btn btn-print"><img src="{{ asset('adm/assets/img/ico_print2.png') }}" alt="print"> 주문인수증 인쇄</button></li>
-                <li><button type="button" class="btn btn-cancel"><img src="{{ asset('adm/assets/img/ico_doc2.png') }}" alt="doc"> 주문취소처리</button></li>
-                <li><button type="button" class="btn btn-del"><img src="{{ asset('adm/assets/img/ico_doc2.png') }}" alt="doc"> 주문서 삭제하기</button></li>
+                <li><button type="button" class="btn btn-order-status-action" data-action="cancel"><img src="{{ asset('adm/assets/img/ico_doc2.png') }}" alt="doc"> 주문취소처리</button></li>
+                <li><button type="button" class="btn btn-del btn-order-status-action" data-action="delete"><img src="{{ asset('adm/assets/img/ico_doc2.png') }}" alt="doc"> 주문서 삭제하기</button></li>
                 <li>
                     <button type="button"
                             class="btn btn-suju"
@@ -416,12 +416,70 @@ if ($order->delivery_date) {
                 }
 
                 if (action === 'cancel') {
-                    alert('주문취소 처리는 준비중입니다.');
+                    if (!confirm('주문취소 처리하시겠습니까?')) {
+                        return;
+                    }
+
+                    $.ajax({
+                        url: @json(route('admin.all-order-list.cancel', $order)),
+                        method: 'POST',
+                        data: {
+                            _token: @json(csrf_token())
+                        },
+                        success: function (res) {
+                            alert(res.message || '주문취소 처리되었습니다.');
+
+                            if (window.opener && !window.opener.closed) {
+                                window.opener.location.reload();
+                            }
+
+                            window.close();
+                        },
+                        error: function (xhr) {
+                            let msg = '주문취소 처리에 실패했습니다.';
+
+                            if (xhr.responseJSON?.message) {
+                                msg = xhr.responseJSON.message;
+                            } else if (xhr.responseJSON?.errors) {
+                                const firstKey = Object.keys(xhr.responseJSON.errors)[0];
+                                if (firstKey && xhr.responseJSON.errors[firstKey]?.[0]) {
+                                    msg = xhr.responseJSON.errors[firstKey][0];
+                                }
+                            }
+
+                            alert(msg);
+                        }
+                    });
+
                     return;
                 }
 
                 if (action === 'delete') {
-                    alert('주문서 삭제는 준비중입니다.');
+                    if (!confirm('주문서를 삭제하시겠습니까?')) {
+                        return;
+                    }
+
+                    $.ajax({
+                        url: @json(route('admin.all-order-list.hide', $order)),
+                        method: 'POST',
+                        data: {
+                            _token: @json(csrf_token())
+                        },
+                        success: function (res) {
+                            alert(res.message || '주문서가 삭제 처리되었습니다.');
+
+                            if (window.opener && !window.opener.closed) {
+                                window.opener.location.reload();
+                            }
+
+                            window.close();
+                        },
+                        error: function (xhr) {
+                            const msg = xhr.responseJSON?.message || '주문서 삭제 처리에 실패했습니다.';
+                            alert(msg);
+                        }
+                    });
+
                     return;
                 }
             });

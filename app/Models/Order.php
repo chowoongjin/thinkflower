@@ -43,6 +43,9 @@ class Order extends Model
         'delivery_hour',
         'delivery_minute',
         'delivery_time_type',
+        'is_hidden',
+        'hidden_at',
+        'hidden_by_admin_user_id',
         'is_urgent',
         'recipient_name',
         'recipient_phone',
@@ -66,6 +69,8 @@ class Order extends Model
         return [
             'delivery_date' => 'date',
             'is_urgent' => 'boolean',
+            'is_hidden' => 'boolean',
+            'hidden_at' => 'datetime',
             'request_photo' => 'boolean',
             'accepted_at' => 'datetime',
             'delivered_at' => 'datetime',

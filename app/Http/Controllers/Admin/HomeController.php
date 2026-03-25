@@ -18,6 +18,7 @@ class HomeController extends Controller
 
         $mediationBaseQuery = Order::query()
             ->with(['ordererShop', 'receiverShop'])
+            ->where('is_hidden', 0)
             ->where(function ($query) {
                 $query->whereNull('receiver_shop_id')
                     ->orWhere('receiver_shop_id', 0);
@@ -26,10 +27,12 @@ class HomeController extends Controller
         $mediationPendingAmount = (int) (clone $mediationBaseQuery)->sum('order_amount');
 
         $monthlyReceivedAmount = (int) Order::query()
+            ->where('is_hidden', 0)
             ->whereBetween('created_at', [$monthStart, $monthEnd])
             ->sum('payment_amount');
 
         $monthlyUsageFeeAmount = (int) Order::query()
+            ->where('is_hidden', 0)
             ->whereBetween('created_at', [$monthStart, $monthEnd])
             ->sum('brokerage_fee');
 
@@ -51,6 +54,7 @@ class HomeController extends Controller
         $todayCheckBaseQuery = Order::query()
             ->with(['ordererShop', 'receiverShop'])
             ->withCount('photos')
+            ->where('is_hidden', 0)
             ->where(function ($query) {
                 $query->whereNull('current_status')
                     ->orWhere('current_status', '!=', 'delivered');
@@ -85,6 +89,7 @@ class HomeController extends Controller
         $allOrderDashboardQuery = Order::query()
             ->with(['ordererShop', 'receiverShop'])
             ->withCount('photos')
+            ->where('is_hidden', 0)
             ->where(function ($query) {
                 $query->whereNull('current_status')
                     ->orWhere('current_status', '!=', 'delivered');
