@@ -169,7 +169,7 @@
                             <th>상품이미지</th>
                             <td>
                                 <div class="input-group-file2">
-                                    <input type="file" name="product_image_file" id="file">
+                                    <input type="file" name="product_image_file" id="file" accept="image/*">
                                     <label for="file">이미지 첨부</label>
                                     <input type="text" name="product_image_input_url" id="product_image_url" value="{{ old('product_image_input_url') }}" placeholder="상품이미지 주소가 잇다면 붙여 넣어 주세요">
                                 </div>

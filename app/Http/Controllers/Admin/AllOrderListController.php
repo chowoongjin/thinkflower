@@ -96,10 +96,10 @@ class AllOrderListController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $totalOrderAmount = (clone $query)->sum('original_amount');
+        $totalOrderAmount = (clone $query)->sum('payment_amount');
         $totalPaymentAmount = (clone $query)
             ->where('current_status', 'delivered')
-            ->sum('order_amount');
+            ->sum('payment_amount');
 
         $data = compact(
             'orders',

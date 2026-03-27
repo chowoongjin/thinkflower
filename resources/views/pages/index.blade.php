@@ -58,7 +58,8 @@
                     <div class="flex">
                         <div class="flex__col">미확인 수주건</div>
                         <div class="flex__col">
-                            <strong class="fs18 color-primary">{{ number_format($uncheckedReceiveCount ?? 0) }}건</strong>
+                            <strong class="fs18 color-primary">{{ number_format($uncheckedReceiveCount ?? 0) }}
+                                건</strong>
                         </div>
                     </div>
                 </div>
@@ -160,6 +161,24 @@
 @push('scripts')
     <script>
         $(function () {
+            const $bannerSlider = $('#mainBannerSlider');
+            const $bannerTrack = $bannerSlider.find('.main-banner-track');
+            const $bannerSlides = $bannerTrack.find('.main-banner-slide');
+
+            if ($bannerSlider.length && $bannerSlides.length > 1) {
+                let currentIndex = 0;
+                const totalSlides = $bannerSlides.length;
+
+                function goToSlide(index) {
+                    $bannerTrack.css('transform', 'translateX(-' + (index * 100) + '%)');
+                }
+
+                setInterval(function () {
+                    currentIndex = (currentIndex + 1) % totalSlides;
+                    goToSlide(currentIndex);
+                }, 3000);
+            }
+
             const csrfToken = @json(csrf_token());
 
             $(document).on('click', '.order-popup-link', function (e) {
@@ -173,6 +192,35 @@
                     'orderPopup',
                     'width=1000,height=820,scrollbars=no,resizable=no,toolbar=no,menubar=no,location=no,status=no'
                 );
+            });
+
+            $(document).on('click', '.btn-order-history-modal', function (e) {
+                e.preventDefault();
+
+                const url = $(this).data('history-url');
+                if (!url) return;
+
+                $.ajax({
+                    url: url,
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function (html) {
+                        $('#order-history-modal-area').html(html);
+                        $('#orderHistoryModal').show();
+                        $('body').addClass('overflow-hidden');
+                    },
+                    error: function () {
+                        alert('처리내역을 불러오지 못했습니다.');
+                    }
+                });
+            });
+
+            $(document).on('click', '.btn-close-order-history-modal', function () {
+                $('#orderHistoryModal').hide();
+                $('#order-history-modal-area').empty();
+                $('body').removeClass('overflow-hidden');
             });
 
             $(document).on('click', '.suju-popup-link', function (e) {
