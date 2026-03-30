@@ -10,7 +10,9 @@ use App\Models\OrderHistory;
 use App\Jobs\ProcessCafe24UploadJob;
 use App\Models\UploadTask;
 use App\Services\Cafe24FileUploadService;
+use App\Services\ReceiverAssignmentNotificationDispatcher;
 use Carbon\Carbon;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -18,9 +20,15 @@ use Illuminate\Validation\ValidationException;
 class AllOrderListController extends Controller
 {
     protected Cafe24FileUploadService $uploadService;
-    public function __construct(Cafe24FileUploadService $uploadService)
+    protected ReceiverAssignmentNotificationDispatcher $receiverNotificationDispatcher;
+
+    public function __construct(
+        Cafe24FileUploadService $uploadService,
+        ReceiverAssignmentNotificationDispatcher $receiverNotificationDispatcher
+    )
     {
         $this->uploadService = $uploadService;
+        $this->receiverNotificationDispatcher = $receiverNotificationDispatcher;
     }
     public function index(Request $request)
     {
@@ -169,6 +177,12 @@ class AllOrderListController extends Controller
 
     public function assignReceiver(Request $request, Order $order)
     {
+        if ($order->current_status === 'delivered') {
+            return response()->json([
+                'message' => '배송완료된 주문건 입니다.',
+            ], 422);
+        }
+
         $validated = $request->validate([
             'receiver_shop_id' => ['required', 'integer', 'exists:shops,id'],
             'admin_accept' => ['nullable', 'in:1'],
@@ -177,11 +191,18 @@ class AllOrderListController extends Controller
             'receiver_shop_id.exists' => '존재하지 않는 수주사입니다.',
         ]);
 
-        DB::transaction(function () use ($request, $order, $validated) {
-            $order->refresh();
+        $receiverShopId = (int) $validated['receiver_shop_id'];
 
-            $oldStatus = $order->current_status;
-            $receiverShopId = (int) $validated['receiver_shop_id'];
+        DB::transaction(function () use ($request, $order, $validated, $receiverShopId) {
+            $lockedOrder = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if ($lockedOrder->current_status === 'delivered') {
+                throw new HttpResponseException(response()->json([
+                    'message' => '배송완료된 주문건 입니다.',
+                ], 422));
+            }
+
+            $oldStatus = $lockedOrder->current_status;
             $adminAccept = (string) ($validated['admin_accept'] ?? '') === '1';
 
             $updateData = [
@@ -195,11 +216,11 @@ class AllOrderListController extends Controller
                 $updateData['accepted_by_type'] = 'admin';
             }
 
-            $order->update($updateData);
+            $lockedOrder->update($updateData);
 
             DB::table('order_histories')->insert([
-                'order_id' => $order->id,
-                'order_no' => $order->order_no,
+                'order_id' => $lockedOrder->id,
+                'order_no' => $lockedOrder->order_no,
                 'history_type' => $adminAccept ? 'accepted' : 'updated',
                 'message' => '<strong>본부 수발주사업부</strong> 에서 주문접수 처리',
                 'processed_at' => now(),
@@ -209,7 +230,7 @@ class AllOrderListController extends Controller
             ]);
 
             DB::table('order_status_logs')->insert([
-                'order_id' => $order->id,
+                'order_id' => $lockedOrder->id,
                 'from_status' => $oldStatus,
                 'to_status' => $adminAccept ? 'accepted' : $oldStatus,
                 'changed_by_user_id' => auth()->id(),
@@ -217,6 +238,12 @@ class AllOrderListController extends Controller
                 'created_at' => now(),
             ]);
         });
+
+        $this->receiverNotificationDispatcher->dispatch(
+            $order->fresh(),
+            $receiverShopId,
+            auth()->id()
+        );
 
         return response()->json([
             'success' => true,
@@ -669,6 +696,7 @@ class AllOrderListController extends Controller
                         'balance_after' => $afterBalance,
                         'summary' => '주문취소 포인트 환불',
                         'description' => '주문번호 ' . $lockedOrder->order_no . ' 발주사 환불',
+                        'transacted_at' => now(),
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
@@ -711,6 +739,7 @@ class AllOrderListController extends Controller
                             'balance_after' => $afterBalance,
                             'summary' => '주문취소 포인트 회수',
                             'description' => '주문번호 ' . $lockedOrder->order_no . ' 수주사 회수',
+                            'transacted_at' => now(),
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);

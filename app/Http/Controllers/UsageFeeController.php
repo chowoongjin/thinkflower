@@ -6,7 +6,6 @@ use App\Models\PaymentTransaction;
 use App\Models\PointTransaction;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 
 class UsageFeeController extends Controller
 {
@@ -54,13 +53,22 @@ class UsageFeeController extends Controller
 
         $pointRows = PointTransaction::query()
             ->where('shop_id', $shop->id)
-            ->whereIn('transaction_type', ['bonus', 'refund', 'adjust_plus', 'adjust_minus'])
-            ->orderByDesc('transacted_at')
+            ->whereIn('transaction_type', [
+                'bonus',
+                'refund',
+                'adjust_plus',
+                'adjust_minus',
+                'order_cancel_refund',
+                'order_credit_cancel',
+            ])
+            ->orderByRaw('COALESCE(transacted_at, created_at) DESC')
             ->orderByDesc('id')
             ->limit(20)
             ->get()
             ->map(function ($row) {
-                $transactedAt = $row->transacted_at ? Carbon::parse($row->transacted_at) : null;
+                $transactedAt = $row->transacted_at
+                    ? Carbon::parse($row->transacted_at)
+                    : ($row->created_at ? Carbon::parse($row->created_at) : null);
                 $isIn = $row->direction === 'in';
 
                 return (object) [
@@ -120,6 +128,8 @@ class UsageFeeController extends Controller
             'refund' => '환불',
             'adjust_plus' => '장려금',
             'adjust_minus' => '차감',
+            'order_cancel_refund' => '발주취소',
+            'order_credit_cancel' => '수주취소',
             default => '포인트',
         };
     }

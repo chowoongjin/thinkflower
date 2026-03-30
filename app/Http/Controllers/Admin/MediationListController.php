@@ -6,12 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Shop;
 use App\Models\OrderHistory;
+use App\Services\ReceiverAssignmentNotificationDispatcher;
 use Carbon\Carbon;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class MediationListController extends Controller
 {
+    public function __construct(
+        protected ReceiverAssignmentNotificationDispatcher $receiverNotificationDispatcher
+    ) {
+    }
+
     public function index(Request $request)
     {
         $rangePreset = $request->string('range_preset')->value() ?: 'thisMonth';
@@ -132,25 +139,41 @@ class MediationListController extends Controller
 
     public function assignReceiver(Request $request, Order $order)
     {
+        if ($order->current_status === 'delivered') {
+            return response()->json([
+                'message' => '배송완료된 주문건 입니다.',
+            ], 422);
+        }
+
         $data = $request->validate([
             'receiver_shop_id' => ['required', 'integer', 'exists:shops,id'],
         ]);
 
+        $receiverShopId = (int) $data['receiver_shop_id'];
+
         DB::transaction(function () use ($order, $data, $request) {
+            $lockedOrder = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if ($lockedOrder->current_status === 'delivered') {
+                throw new HttpResponseException(response()->json([
+                    'message' => '배송완료된 주문건 입니다.',
+                ], 422));
+            }
+
             $receiverShop = Shop::findOrFail((int) $data['receiver_shop_id']);
 
-            $fromStatus = $order->current_status;
+            $fromStatus = $lockedOrder->current_status;
 
-            $order->receiver_shop_id = $receiverShop->id;
-            $order->brokerage_type = 'assigned';
-            $order->current_status = $order->current_status ?: 'submitted';
-            $order->save();
+            $lockedOrder->receiver_shop_id = $receiverShop->id;
+            $lockedOrder->brokerage_type = 'assigned';
+            $lockedOrder->current_status = $lockedOrder->current_status ?: 'submitted';
+            $lockedOrder->save();
 
             // 필요하면 히스토리도 같이 남김
             if (class_exists(OrderHistory::class)) {
                 OrderHistory::create([
-                    'order_id' => $order->id,
-                    'order_no' => $order->order_no,
+                    'order_id' => $lockedOrder->id,
+                    'order_no' => $lockedOrder->order_no,
                     'history_type' => 'updated',
                     'message' => '<strong>본부 수발주사업부</strong> 에서 수주사 중개 시작',
                     'processed_at' => now(),
@@ -159,14 +182,20 @@ class MediationListController extends Controller
             }
 
             DB::table('order_status_logs')->insert([
-                'order_id' => $order->id,
+                'order_id' => $lockedOrder->id,
                 'from_status' => $fromStatus,
-                'to_status' => $order->current_status,
+                'to_status' => $lockedOrder->current_status,
                 'changed_by_user_id' => optional($request->user())->id,
                 'memo' => '본부 수발주사업부 에서 수주사 중개 시작',
                 'created_at' => now(),
             ]);
         });
+
+        $this->receiverNotificationDispatcher->dispatch(
+            $order->fresh(),
+            $receiverShopId,
+            optional($request->user())->id
+        );
 
         return response()->json([
             'success' => true,

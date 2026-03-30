@@ -99,4 +99,9 @@ class Order extends Model
     {
         return $this->hasMany(OrderPhoto::class);
     }
+
+    public function receiverNotifications()
+    {
+        return $this->hasMany(OrderReceiverNotification::class);
+    }
 }

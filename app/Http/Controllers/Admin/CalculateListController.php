@@ -29,11 +29,17 @@ class CalculateListController extends Controller
 
         $monthStart = $targetMonth->copy()->startOfMonth();
         $monthEnd = $targetMonth->copy()->endOfMonth();
+        $settledAtExpression = 'COALESCE(point_transactions.transacted_at, point_transactions.created_at)';
 
         $baseQuery = DB::table('point_transactions')
             ->join('shops', 'shops.id', '=', 'point_transactions.shop_id')
-            ->whereBetween('point_transactions.transacted_at', [$monthStart, $monthEnd])
-            ->whereIn('point_transactions.transaction_type', ['order_debit', 'order_credit'])
+            ->whereBetween(DB::raw($settledAtExpression), [$monthStart, $monthEnd])
+            ->whereIn('point_transactions.transaction_type', [
+                'order_debit',
+                'order_credit',
+                'order_cancel_refund',
+                'order_credit_cancel',
+            ])
             ->selectRaw('
                 shops.id,
                 shops.shop_name,

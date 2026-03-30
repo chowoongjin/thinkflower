@@ -82,8 +82,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/modal/point-charge', [ModalController::class, 'pointCharge'])->name('modal.point-charge');
     Route::post('/point-charge/test', [PointChargeController::class, 'store'])->name('point-charge.test.store');
     Route::post('/bonbu-balju/order', [OrderController::class, 'store'])->name('bonbu-balju.order.store');
-    Route::post('/bonbu-balju/hq', [OrderController::class, 'storeHq'])->name('bonbu-balju.hq.store');
-
     Route::get('/order-list', [OrderListController::class, 'index'])->name('order-list');
     Route::get('/order-list/{order}/popup', [OrderListController::class, 'popup'])->name('order-list.popup');
     Route::get('/order-list/{order}/history-modal', [OrderListController::class, 'historyModal'])->name('order-list.history-modal');

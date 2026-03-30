@@ -10,6 +10,7 @@ use App\Models\ProductCategory;
 use App\Models\Shop;
 use App\Services\Cafe24FileUploadService;
 use App\Services\PointService;
+use App\Services\ReceiverAssignmentNotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -19,13 +20,16 @@ class RealTimeController extends Controller
     protected int $hqShopId = 1;
     protected Cafe24FileUploadService $uploadService;
     protected PointService $pointService;
+    protected ReceiverAssignmentNotificationDispatcher $receiverNotificationDispatcher;
 
     public function __construct(
         Cafe24FileUploadService $uploadService,
-        PointService $pointService
+        PointService $pointService,
+        ReceiverAssignmentNotificationDispatcher $receiverNotificationDispatcher
     ) {
         $this->uploadService = $uploadService;
         $this->pointService = $pointService;
+        $this->receiverNotificationDispatcher = $receiverNotificationDispatcher;
     }
 
     protected function makeShopDisplayName(?Shop $shop): string
@@ -217,6 +221,8 @@ class RealTimeController extends Controller
             $productImageUrl = $validated['product_image_url'];
         }
 
+        $dispatchContext = null;
+
         DB::transaction(function () use (
             $validated,
             $user,
@@ -224,7 +230,8 @@ class RealTimeController extends Controller
             $receiverShopId,
             $orderAmount,
             $productImagePath,
-            $productImageUrl
+            $productImageUrl,
+            &$dispatchContext
         ) {
             $ordererShop = Shop::where('id', $ordererShopId)->lockForUpdate()->firstOrFail();
             $receiverShop = Shop::findOrFail($receiverShopId);
@@ -307,7 +314,21 @@ class RealTimeController extends Controller
                 $orderAmount,
                 '관리자 실시간발주 포인트 차감'
             );
+
+            $dispatchContext = [
+                'order_id' => $order->id,
+                'receiver_shop_id' => $receiverShop->id,
+                'actor_user_id' => $user->id,
+            ];
         });
+
+        if (is_array($dispatchContext)) {
+            $this->receiverNotificationDispatcher->dispatch(
+                Order::query()->findOrFail((int) $dispatchContext['order_id']),
+                (int) $dispatchContext['receiver_shop_id'],
+                (int) $dispatchContext['actor_user_id']
+            );
+        }
 
         return redirect()
             ->route('admin.real-time.index')

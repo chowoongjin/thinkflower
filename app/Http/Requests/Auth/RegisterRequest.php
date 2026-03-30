@@ -13,8 +13,13 @@ class RegisterRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $taxEmailId = trim((string) ($this->tax_email_id ?? ''));
+        $taxEmailDomain = trim((string) ($this->tax_email_domain ?? ''));
+
         $this->merge([
-            'tax_email' => trim(($this->tax_email_id ?? '') . '@' . ($this->tax_email_domain ?? '')),
+            'tax_email' => ($taxEmailId === '' && $taxEmailDomain === '')
+                ? ''
+                : $taxEmailId . '@' . $taxEmailDomain,
             'business_no' => preg_replace('/[^0-9]/', '', (string) $this->business_no),
             'main_phone' => preg_replace('/[^0-9]/', '', (string) $this->main_phone),
             'fax' => preg_replace('/[^0-9]/', '', (string) $this->fax),
@@ -27,6 +32,7 @@ class RegisterRequest extends FormRequest
         return [
             'login_id' => ['required', 'string', 'min:4', 'max:50', 'unique:users,login_id'],
             'password' => ['required', 'string', 'min:5', 'confirmed'],
+            'password_confirmation' => ['required'],
 
             'business_no' => ['required', 'string', 'size:10', 'unique:shops,business_no'],
             'owner_name' => ['required', 'string', 'max:50'],
@@ -60,6 +66,7 @@ class RegisterRequest extends FormRequest
             'login_id.unique' => '이미 사용 중인 아이디입니다.',
 
             'password.required' => '비밀번호를 입력해 주세요.',
+            'password_confirmation.required' => '비밀번호 확인을 입력해 주세요.',
             'password.confirmed' => '비밀번호 확인이 일치하지 않습니다.',
 
             'business_no.required' => '사업자등록번호를 입력해 주세요.',

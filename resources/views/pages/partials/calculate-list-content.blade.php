@@ -37,9 +37,9 @@
                     <tr>
                         <th class="fs13">조회기간 현황</th>
                         <td colspan="3">
-                            <span class="color-orange">발주건</span>
+                            <span class="color-orange">차감건</span>
                             -{{ number_format($orderAmount) }}원({{ number_format($orderCount) }}건)
-                            <span class="color-green pl10">수주건</span>
+                            <span class="color-green pl10">적립건</span>
                             +{{ number_format($receiveAmount) }}원({{ number_format($receiveCount) }}건)
                         </td>
                     </tr>

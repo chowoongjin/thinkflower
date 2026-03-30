@@ -21,28 +21,16 @@
         </thead>
         <tbody>
         @forelse ($rows as $row)
-            @php
-                $isOrder = $row->transaction_type === 'order_debit';
-                $isReceive = $row->transaction_type === 'order_credit';
-            @endphp
             <tr>
                 <td class="align-center">
-                    @if($isOrder)
-                        <span class="color-orange">발주</span>
-                    @else
-                        <span class="color-blue">수주</span>
-                    @endif
+                    <span class="{{ $row->display_type_class }}">{{ $row->display_type_label }}</span>
                 </td>
-                <td>{{ \Carbon\Carbon::parse($row->transacted_at)->format('Y/m/d H:i') }}</td>
-                <td>{{ trim(($row->delivery_addr1 ?? '') . ' ' . ($row->delivery_addr2 ?? '')) }}</td>
-                <td class="align-center">{{ $row->recipient_name ?? '-' }}</td>
-                <td class="align-center">{{ $row->product_name ?? '-' }}</td>
+                <td>{{ $row->display_settled_at }}</td>
+                <td>{{ $row->display_delivery_text }}</td>
+                <td class="align-center">{{ $row->display_recipient_text }}</td>
+                <td class="align-center">{{ $row->display_product_text }}</td>
                 <td>
-                    @if($isOrder)
-                        <span class="color-orange">-{{ number_format($row->amount) }}원</span>
-                    @else
-                        <span class="color-green">+{{ number_format($row->amount) }}원</span>
-                    @endif
+                    <span class="{{ $row->display_amount_class }}">{{ $row->display_amount_label }}</span>
                 </td>
             </tr>
         @empty

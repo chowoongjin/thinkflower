@@ -120,7 +120,7 @@
 
             <form id="bonbu-balju-form" action="{{ route('bonbu-balju.order.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
-
+                <input type="hidden" name="delivery_now" id="delivery_now_hidden" value="{{ old('delivery_now') ? '1' : '0' }}">
                 <section class="mt30">
                     <table class="table-data collapse">
                         <colgroup>
@@ -249,7 +249,7 @@
                                 <div class="input-group-column">
                                     <div class="col">
                                         <div class="input-group-checkbox">
-                                            <input type="checkbox" id="delivery_now">
+                                            <input type="checkbox" id="delivery_now" {{ old('delivery_now') ? 'checked' : '' }}>
                                             <label for="delivery_now">지금즉시</label>
                                         </div>
                                     </div>
@@ -260,14 +260,14 @@
                                         <select name="delivery_hour" id="delivery_hour" style="width:110px;">
                                             <option value="">시간선택</option>
                                             @for ($i = 0; $i <= 23; $i++)
-                                                <option value="{{ $i }}" {{ old('delivery_hour') === (string) $i ? 'selected' : '' }}>{{ $i }}시</option>
+                                                <option value="{{ $i }}" {{ (string) old('delivery_hour') == (string) $i ? 'selected' : '' }}>{{ $i }}시</option>
                                             @endfor
                                         </select>
                                     </div>
                                     <div class="col">
                                         <select name="delivery_minute" id="delivery_minute" style="width:110px;">
                                             @foreach (['0','10','20','30','40','50'] as $minute)
-                                                <option value="{{ $minute }}" {{ old('delivery_minute', '0') === $minute ? 'selected' : '' }}>{{ str_pad($minute, 2, '0', STR_PAD_LEFT) }}분</option>
+                                                <option value="{{ $minute }}" {{ (string) old('delivery_minute', '0') == (string) $minute ? 'selected' : '' }}>{{ str_pad($minute, 2, '0', STR_PAD_LEFT) }}분</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -343,7 +343,8 @@
                                                 <input type="radio"
                                                        name="ribbon_quick"
                                                        value="{{ $ribbonOption }}"
-                                                       id="ment{{ $idx + 1 }}">
+                                                       id="ment{{ $idx + 1 }}"
+                                                    {{ (string) old('ribbon_quick', old('ribbon_phrase')) == (string) $ribbonOption ? 'checked' : '' }}>
                                                 <label for="ment{{ $idx + 1 }}">{{ $ribbonOption }}</label>
                                             </li>
                                         @endforeach
@@ -431,6 +432,7 @@
     <script>
         $(function () {
             const PHOTO_REQUEST_TEXT = '★현장사진 꼭 부탁드립니다';
+            const hasOldInput = @json(session()->hasOldInput());
             let isSubmitting = false;
 
             closeLoadingModal();
@@ -713,9 +715,11 @@
 
                 if (preset.immediate) {
                     $('#delivery_now').prop('checked', true);
+                    $('#delivery_now_hidden').val('1');
                     setImmediateDeliveryTime(false);
                 } else {
                     $('#delivery_now').prop('checked', false);
+                    $('#delivery_now_hidden').val('0');
                 }
 
                 updateSummary();
@@ -731,7 +735,6 @@
                 const deliveryHour = $('#delivery_hour').val() || '';
                 const deliveryMinute = $('#delivery_minute').val() || '';
                 const deliveryType = $('input[name="delivery_time_type"]:checked').val() || '';
-                const isImmediate = $('#delivery_now').is(':checked');
 
                 $('#summary-product-detail').text(
                     productDetail !== '' ? productDetail : (productName !== '' ? productName : '미 입력 상태')
@@ -866,9 +869,12 @@
             });
 
             $(document).on('change', '#delivery_now', function () {
+                $('#delivery_now_hidden').val($(this).is(':checked') ? '1' : '0');
+
                 if ($(this).is(':checked')) {
                     setImmediateDeliveryTime(true);
                 }
+
                 updateSummary();
             });
 
@@ -948,14 +954,25 @@
             }
 
             ensurePanelState();
-            syncRequestPhotoNote();
+
+            if (!hasOldInput) {
+                syncRequestPhotoNote();
+            }
+
             updateSummary();
             openImagePanelIfNeeded();
 
+            const initialImageUrl = ($('#product_image_url').val() || '').trim();
+            if (initialImageUrl !== '') {
+                showPreviewFromUrl(initialImageUrl);
+            }
+
             const initProduct = $('input[name="product_name"]:checked').val();
-            if (initProduct) {
+            if (initProduct && !hasOldInput) {
                 applyProductPreset(initProduct);
             }
+
+            $('#delivery_now_hidden').val($('#delivery_now').is(':checked') ? '1' : '0');
         });
     </script>
 @endpush
