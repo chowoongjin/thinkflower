@@ -100,6 +100,13 @@ class Order extends Model
         return $this->hasMany(OrderPhoto::class);
     }
 
+    public function uploadedPhotos()
+    {
+        return $this->hasMany(OrderPhoto::class)
+            ->whereNotNull('file_path')
+            ->where('file_path', '!=', '');
+    }
+
     public function receiverNotifications()
     {
         return $this->hasMany(OrderReceiverNotification::class);

@@ -85,6 +85,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/order-list', [OrderListController::class, 'index'])->name('order-list');
     Route::get('/order-list/{order}/popup', [OrderListController::class, 'popup'])->name('order-list.popup');
     Route::get('/order-list/{order}/history-modal', [OrderListController::class, 'historyModal'])->name('order-list.history-modal');
+    Route::get('/order-list/{order:order_no}/complete-popup', [OrderListController::class, 'completePopup'])->name('order-list.complete-popup');
+    Route::post('/order-list/{order:order_no}/complete', [OrderListController::class, 'completeStore'])->name('order-list.complete-store');
+    Route::post('/order-list/{order:order_no}/upload-photo', [OrderListController::class, 'uploadPhoto'])->name('order-list.upload-photo');
+    Route::get('/order-list/{order:order_no}/photo-upload-status', [OrderListController::class, 'photoUploadStatus'])->name('order-list.photo-upload-status');
     Route::get('/order-list/{order}/photo-popup', [OrderListController::class, 'photoPopup'])->name('order-list.photo-popup');
 
     Route::get('/suju-list', [SujuListController::class, 'index'])->name('suju-list');
@@ -115,6 +119,20 @@ Route::middleware('auth')->group(function () {
     Route::get('/announcement', [AnnouncementController::class, 'index'])->name('announcement.index');
     Route::get('/announcement/{announcement}', [AnnouncementController::class, 'show'])->name('announcement.show');
     Route::get('/usage-fee', [UsageFeeController::class, 'index'])->name('usage-fee');
+    Route::view('/marketing-support', 'pages.marketing-support')->name('marketing-support');
+    Route::view('/shopping-mall-production', 'pages.shopping-mall-production')->name('shopping-mall-production');
+    Route::view('/regional-cafe-viral-marketing', 'pages.regional-cafe-viral-marketing')->name('regional-cafe-viral-marketing');
+    Route::view('/naver-place-booster', 'pages.naver-place-booster')->name('naver-place-booster');
+    Route::view('/kakao-plus-friend-booster', 'pages.kakao-plus-friend-booster')->name('kakao-plus-friend-booster');
+    Route::prefix('shop-site')->name('shop-site.')->group(function () {
+        Route::view('/', 'pages.shop.home')->name('home');
+        Route::view('/list', 'pages.shop.list')->name('list');
+        Route::view('/product', 'pages.shop.product')->name('product');
+        Route::view('/modals-demo', 'pages.shop.modal-demo')->name('modal-demo');
+        Route::view('/modals/actions', 'pages.shop.modals.actions')->name('modals.actions');
+        Route::view('/modals/reservation', 'pages.shop.modals.reservation')->name('modals.reservation');
+        Route::view('/modals/stock-request', 'pages.shop.modals.stock-request')->name('modals.stock-request');
+    });
     Route::get('/bill-list', [BillListController::class, 'index'])->name('bill-list');
 
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');

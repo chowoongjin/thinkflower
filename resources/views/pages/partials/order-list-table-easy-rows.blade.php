@@ -15,12 +15,9 @@
         }
 
         $receiverShopName = optional($order->receiverShop)->shop_name ?: '본부수발주사업부';
-        $hasPhoto = (int) ($order->photos_count ?? 0) > 0;
+        $photoCount = (int) ($order->photos_count ?? 0);
 
-        if ($order->current_status === 'delivered') {
-            $statusLabel = '배송완료';
-            $statusClass = '';
-        } elseif ($order->current_status === 'accepted' && $order->accepted_by_type === 'admin') {
+        if ($order->current_status === 'accepted' && $order->accepted_by_type === 'admin') {
             $statusLabel = '본부접수';
             $statusClass = '';
         } elseif ($order->current_status === 'accepted' && $order->accepted_by_type === 'shop') {
@@ -86,10 +83,16 @@
             <b class="color-green">{{ number_format($order->order_amount) }}원</b>
         </td>
         <td>
-            @if($hasPhoto)
+            @if($photoCount >= 3)
                 <a href="{{ route('order-list.photo-popup', $order) }}"
                    class="order-photo-popup-link"
                    data-popup-url="{{ route('order-list.photo-popup', $order) }}">
+                    <img src="{{ asset('assets/img/ico_photo_on.png') }}" height="18">
+                </a>
+            @elseif($order->current_status === 'delivered' || $photoCount >= 1)
+                <a href="{{ route('order-list.complete-popup', $order) }}"
+                   class="order-photo-popup-link"
+                   data-popup-url="{{ route('order-list.complete-popup', $order) }}">
                     <img src="{{ asset('assets/img/ico_photo_on.png') }}" height="18">
                 </a>
             @else
@@ -99,7 +102,13 @@
             @endif
         </td>
         <td class="fs13">
-            @if($statusClass)
+            @if ($order->current_status === 'delivered')
+                {{ $order->receiver_name ?: '미입력' }}
+                @if (!empty($order->receiver_relation))
+                    <br>
+                    <span class="color-gray300">{{ $order->receiver_relation }}</span>
+                @endif
+            @elseif($statusClass)
                 <span class="{{ $statusClass }}">{{ $statusLabel }}</span>
             @else
                 <span>{{ $statusLabel }}</span>

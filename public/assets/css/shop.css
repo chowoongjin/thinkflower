@@ -1,0 +1,356 @@
+:root{
+	--color-green:#459922;
+}
+.btn.btn-green{
+	background-color:var(--color-green);
+	border-color:var(--color-green);
+}
+html{
+	font-size:14px;
+}
+
+#shoppingmall{
+	width:100%;
+}
+
+#shoppingmall .flex + .flex{
+	margin-top:.5rem;
+}
+#shoppingmall .flex .flex__col,
+#shoppingmall .flex label{
+	font-size:1rem;
+	font-weight:500;
+}
+#shoppingmall input[type="radio"]{
+	border-radius:50%!important;
+	position:relative;
+	background-color:#fff!important;
+	width:20px!important;
+	height:20px!important;
+	margin-right:.5rem;
+	border:2px solid #ddd!important;
+}
+#shoppingmall input[type="radio"]:checked{
+	border-color:var(--color-green)!important;
+	position:relative;
+}
+#shoppingmall input[type="radio"]:checked::before{
+	content:'';
+	border-radius:50%;
+	background-color:#fff!important;
+	border:5px solid var(--color-green)!important;
+	position:absolute;
+	left:50%;
+	top:50%;
+	transform:translate(-50%,-50%);
+	background-color:#fff;
+	width:80%!important;
+	height:80%!important;
+}
+
+#shoppingmall__header img{
+	width:100%;
+}
+#shoppingmall__header #header-bar:not(.main){
+	background-color:#fff;
+	display:flex;
+	justify-content:space-between;
+	padding:1rem;
+}
+#shoppingmall__header #header-bar:not(.main) #shop-back img{
+	height:24px;
+	width:auto;
+}
+#shoppingmall__header #header-bar:not(.main) #shop-logo{
+	display:flex;
+	align-items:center;
+	justify-content:flex-end;
+	width:100%;
+}
+#shoppingmall__header #header-bar:not(.main) #shop-logo a{
+	color:#121212;
+	font-weight:600;
+	font-size:1.2rem;
+}
+#shoppingmall__header #header-bar.main{
+	position:absolute;
+	left:0;
+	top:0;
+	width:100%;
+	backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* 사파리 대응 */
+
+    background: rgba(255, 255, 255, 0.2); /* 투명도 */
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+
+    z-index: 1000;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:20px;
+}
+	#shoppingmall__header #header-bar.main #shop-logo a{
+		color:#fff;
+	}
+	#shoppingmall__header #header-bar.main #shop-toggle{
+		display:flex;
+		align-items:center;
+		justify-content:flex-end;
+		text-align:right;
+		flex:1 1 auto;
+	}
+	#shoppingmall__header #header-bar.main #shop-toggle img{
+		width:20px;
+		height:20px;
+	}
+	
+/* main nav */
+#main-nav{
+	border-bottom:3px solid #EBEBEB;
+	height:50px;
+}
+#main-nav > ul{
+	display:flex;
+	align-items:center;
+	height:inherit;
+	white-space:nowrap;
+	overflow-x:auto;
+}
+#main-nav > ul > li > a{
+	color:#848484;
+	padding:15px 18px;
+	white-space:nowrap;
+	position:relative;
+	font-size:1rem;
+	font-weight:600;
+}
+#main-nav > ul > li.active > a::after{
+	content:'';
+	display:block;
+	width:100%;
+	height:3px;
+	position:absolute;
+	bottom:0;
+	left:0;
+	background-color:#459922;
+}
+
+/* body */
+#body{
+	padding:24px;
+	display:block;
+}
+#body section{
+	clear:both;
+	padding:24px 0;
+}
+#body section h2{
+	display:block;
+	margin-bottom:12px;
+	font-size:1.2rem;
+	font-weight:600;
+}
+
+/* Home */
+#introduce .btn_share{
+	border:1px solid #E4E4E4;
+	border-radius:100px;
+	display:inline-block;
+	padding:9px;
+	color:#000;
+	font-weight:600;
+	font-size:.8rem;
+	position:absolute;
+	right:0;
+	top:0;
+}
+#introduce .btn_share i{
+	margin-right:.25rem;
+}
+#introduce .location{
+	color:#B2B2B2;
+	font-size:.9rem;
+}
+#introduce .shopName{
+	font-weight:700;
+	font-size:1.5rem;
+}
+.description{
+	white-space:nowrap;
+	overflow:hidden;
+	text-overflow:ellipsis;
+}
+
+.description.open{
+	white-space:normal;
+}
+
+.description .more{
+	color:#007bff;
+	cursor:pointer;
+	margin-left:5px;
+	font-weight:bold;
+}
+#introduce #tags{
+	overflow-x:auto;
+	display:flex;
+	margin-top:2rem;
+}
+#introduce #tags .tag{
+	background-color:#F5F5F5;
+	color:#4B4B4B;
+	border-radius:3px;
+	padding:7px 12px;
+	display:inline-block;
+	margin-right:6px;
+	white-space:nowrap;
+}
+#map{
+	margin-top:2rem;
+	margin-bottom:2rem;
+}
+
+#quickMenu li{
+	display:block;
+	margin-bottom:8px;
+}
+#quickMenu a{
+	background-color:#F3FFF0;
+	display:block;
+	padding:15px;
+	color:#262626;
+	font-weight:500;
+}
+#quickMenu a i{
+	float:right;
+	margin-right:1rem;
+}
+
+#mapContent span{
+	display:flex;
+	align-items:center;
+	margin-bottom:.5rem;
+}
+#mapContent span img{
+	margin-right:.5rem;
+}
+
+#faq a{
+	
+}
+#faq ul{
+	border-top:1px solid #E5E5E5;
+}
+#faq li{
+	border-bottom:1px solid #E5E5E5;
+	color:#999;
+}
+#faq li .q,
+#faq li .a{
+	display:block;
+}
+#faq li .q{
+	cursor:pointer;
+	padding:18px 5px;
+	background:url('../img/ico_arrow_down2.png') no-repeat right center;
+	background-size:17px;
+}
+#faq li.active{
+	color:#000;
+}
+#faq li.active .q{
+	background-image:url('../img/ico_arrow_up2.png');
+}
+#faq li.active .a{
+	display:block;
+	padding:1rem;
+	background-color:#f8f8f8;
+}
+#faq li .a{
+	display:none;
+}
+
+/* Shop list */
+#shopList ul{
+	display:flex;
+	flex-wrap:wrap;
+	margin-left:-5px;
+}
+#shopList ul > li{
+	width:33.3333%;
+	padding-left:5px;
+	padding-bottom:5px;
+	line-height:1;
+}
+#shopList ul > li img{
+	width:100%;
+}
+
+/* Shop Sub */
+#shopSub #shopSub__header{
+	background-color:#fff;
+	margin-bottom:.5rem;
+}
+#shopSub #shopSub__header img{
+	width:100%;
+}
+#shopSub .itemName{
+	padding:1rem;
+}
+#shopSub .itemName h2{
+	font-weight:700;
+	font-size:1.5rem;
+}
+#shopSub .itemName p{
+	font-size:.9rem;
+	margin-top:.5rem;
+}
+
+#shopSub .section{
+	padding:1.5rem;
+	background-color:#fff;
+	margin-bottom:.5rem;
+}
+#shopSub .section .section-title{
+	font-weight:600;
+	font-size:1.2rem;
+	margin-bottom:1rem;
+}
+#shopSub .section .section-title em{
+	padding-left:.5rem;
+	color:var(--color-orange);
+}
+#shopSub .section input[type="text"] + input[type="text"]{
+	margin-top:.5rem;
+}
+#modal{
+	align-items:center;
+	display:flex;
+	justify-content:center;
+}
+.modal{
+	min-width:80%!important;
+	margin:0 auto;
+}
+
+#modal-shop-reg .list-qa .q{
+	color:#999;
+}
+#modal-shop-reg .list-qa .a{
+	font-weight:600;
+}
+#modal-shop-jego .btn{
+	background-color:#FAE64C;
+	color:#121212;
+	font-weight:600;
+	justify-content:flex-start;
+	position:relative;
+	border-radius:1rem;
+	border:0;
+}
+#modal-shop-jego .btn i{
+	position:absolute;
+	right:1rem;
+	top:50%;
+	transform:translateY(-50%);
+}

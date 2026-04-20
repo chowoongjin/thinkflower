@@ -120,10 +120,10 @@
         <div class="row">
             <h3 class="sidebar-title">정직한플라워 회원복지</h3>
             <ul>
-                <li><a href="#none">세무·노무 무료상담</a></li>
-                <li><a href="#none">소상공인 마케팅지원</a></li>
-                <li><a href="#none">상조서비스 최대할인</a></li>
-                <li><a href="#none">영업쇼핑몰 제작</a></li>
+                <li><a href="https://www.468.co.kr/post/19893" target="_blank" rel="noopener noreferrer">세무·노무 무료상담</a></li>
+                <li><a href="{{ route('marketing-support') }}">소상공인 마케팅지원</a></li>
+                <li><a href="https://www.468.co.kr/post/19893" target="_blank" rel="noopener noreferrer">상조서비스 최대할인</a></li>
+                <li><a href="{{ route('shopping-mall-production') }}">영업쇼핑몰 제작</a></li>
             </ul>
         </div>
     </aside>

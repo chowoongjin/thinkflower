@@ -50,7 +50,7 @@ class SujuListController extends Controller
 
         $query = Order::query()
             ->with(['receiverShop', 'ordererShop'])
-            ->withCount('photos')
+            ->withCount(['uploadedPhotos as photos_count'])
             ->where('receiver_shop_id', $shop->id)
             ->where('is_hidden', 0)
             ->whereDate('delivery_date', '>=', $dateFrom)
@@ -349,6 +349,12 @@ class SujuListController extends Controller
             ]);
         }
 
+        if (empty($order->receiver_shop_id)) {
+            throw ValidationException::withMessages([
+                'receiver_name' => '수주사 선정 후 배송완료 처리할 수 있습니다.',
+            ]);
+        }
+
         $deliveredAt = Carbon::createFromFormat(
             'Y-m-d H:i:s',
             $validated['completed_date'] . ' ' .
@@ -362,6 +368,12 @@ class SujuListController extends Controller
             if ($lockedOrder->current_status === 'delivered') {
                 throw ValidationException::withMessages([
                     'receiver_name' => '이미 배송완료 처리된 주문입니다.',
+                ]);
+            }
+
+            if (empty($lockedOrder->receiver_shop_id)) {
+                throw ValidationException::withMessages([
+                    'receiver_name' => '수주사 선정 후 배송완료 처리할 수 있습니다.',
                 ]);
             }
 
@@ -461,10 +473,10 @@ class SujuListController extends Controller
 
         $validated = $request->validate([
             'photo_field' => ['required', 'in:photo_shop,photo_site,photo_extra'],
-            'photo_file' => ['required', 'file', 'mimetypes:image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,application/pdf'],
+            'photo_file' => ['required', 'file', 'mimetypes:image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml'],
         ], [
             'photo_file.required' => '업로드할 사진을 선택해 주세요.',
-            'photo_file.mimetypes' => '이미지 또는 PDF 파일만 업로드할 수 있습니다.',
+            'photo_file.mimetypes' => '이미지 파일만 업로드할 수 있습니다.',
         ]);
 
         $field = $validated['photo_field'];

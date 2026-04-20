@@ -53,7 +53,7 @@ class HomeController extends Controller
 
         $todayCheckBaseQuery = Order::query()
             ->with(['ordererShop', 'receiverShop'])
-            ->withCount('photos')
+            ->withCount(['uploadedPhotos as photos_count'])
             ->where('is_hidden', 0)
             ->where(function ($query) {
                 $query->whereNull('current_status')
@@ -88,7 +88,7 @@ class HomeController extends Controller
 
         $allOrderDashboardQuery = Order::query()
             ->with(['ordererShop', 'receiverShop'])
-            ->withCount('photos')
+            ->withCount(['uploadedPhotos as photos_count'])
             ->where('is_hidden', 0)
             ->where(function ($query) {
                 $query->whereNull('current_status')

@@ -9,6 +9,7 @@
 
     @php
         $completedBase = $order->delivered_at ? \Carbon\Carbon::parse($order->delivered_at) : now();
+        $allowCompleteAction = $allowCompleteAction ?? true;
 
         $defaultCompletedDate = old('completed_date', $completedBase->format('Y-m-d'));
         $defaultCompletedHour = old('completed_hour', $completedBase->format('H'));
@@ -97,7 +98,7 @@
                     <div class="photoBox" data-photo-field="photo_shop">
                         <h3>매장사진</h3>
                         <div class="photoBox__content">
-                            <input type="file" name="photo_shop" id="photo_shop" accept="image/*,application/pdf">
+                            <input type="file" name="photo_shop" id="photo_shop" accept="image/*">
 
                             @if(!empty($photoShop?->file_path))
                                 <label for="photo_shop" data-role="photo-preview">
@@ -114,7 +115,7 @@
                     <div class="photoBox" data-photo-field="photo_site">
                         <h3>현장사진</h3>
                         <div class="photoBox__content">
-                            <input type="file" name="photo_site" id="photo_site" accept="image/*,application/pdf">
+                            <input type="file" name="photo_site" id="photo_site" accept="image/*">
 
                             @if(!empty($photoSite?->file_path))
                                 <label for="photo_site" data-role="photo-preview">
@@ -131,7 +132,7 @@
                     <div class="photoBox" data-photo-field="photo_extra">
                         <h3>추가사진</h3>
                         <div class="photoBox__content">
-                            <input type="file" name="photo_extra" id="photo_extra" accept="image/*,application/pdf">
+                            <input type="file" name="photo_extra" id="photo_extra" accept="image/*">
 
                             @if(!empty($photoExtra?->file_path))
                                 <label for="photo_extra" data-role="photo-preview">
@@ -420,6 +421,12 @@
             });
 
             $(document).on('submit', '#complete-store-form', function (e) {
+                if (!@json($allowCompleteAction)) {
+                    e.preventDefault();
+                    alert('배송완료 처리는 수주화원만 가능합니다.');
+                    return;
+                }
+
                 if (completeSubmitting) {
                     e.preventDefault();
                     return;

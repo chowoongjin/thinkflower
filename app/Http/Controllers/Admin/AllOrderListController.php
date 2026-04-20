@@ -49,7 +49,7 @@ class AllOrderListController extends Controller
 
         $query = Order::query()
             ->with(['ordererShop', 'receiverShop'])
-            ->withCount('photos')
+            ->withCount(['uploadedPhotos as photos_count'])
             ->whereDate('delivery_date', '>=', $dateFrom)
             ->whereDate('delivery_date', '<=', $dateTo);
 
@@ -218,16 +218,31 @@ class AllOrderListController extends Controller
 
             $lockedOrder->update($updateData);
 
-            DB::table('order_histories')->insert([
+            $historyRows = [[
                 'order_id' => $lockedOrder->id,
                 'order_no' => $lockedOrder->order_no,
-                'history_type' => $adminAccept ? 'accepted' : 'updated',
-                'message' => '<strong>본부 수발주사업부</strong> 에서 주문접수 처리',
+                'history_type' => 'updated',
+                'message' => '<strong>본부 수발주사업부</strong> 에서 수주사 선정',
                 'processed_at' => now(),
                 'actor_user_id' => auth()->id(),
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]);
+            ]];
+
+            if ($adminAccept) {
+                $historyRows[] = [
+                    'order_id' => $lockedOrder->id,
+                    'order_no' => $lockedOrder->order_no,
+                    'history_type' => 'accepted',
+                    'message' => '<strong>본부 수발주사업부</strong> 에서 주문접수 처리',
+                    'processed_at' => now(),
+                    'actor_user_id' => auth()->id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+
+            DB::table('order_histories')->insert($historyRows);
 
             DB::table('order_status_logs')->insert([
                 'order_id' => $lockedOrder->id,
@@ -381,6 +396,13 @@ class AllOrderListController extends Controller
         $user = $request->user();
         abort_unless($user && in_array($user->role, ['admin', 'hq'], true), 403);
 
+        if (empty($order->receiver_shop_id)) {
+            return response()->view('pages.popup-action-result', [
+                'message' => '수주사 선정 후 배송완료 처리할 수 있습니다.',
+                'closeWindow' => true,
+            ]);
+        }
+
         $order->load([
             'ordererShop',
             'receiverShop',
@@ -441,6 +463,12 @@ class AllOrderListController extends Controller
             ]);
         }
 
+        if (empty($order->receiver_shop_id)) {
+            throw ValidationException::withMessages([
+                'receiver_name' => '수주사 선정 후 배송완료 처리할 수 있습니다.',
+            ]);
+        }
+
         $deliveredAt = Carbon::createFromFormat(
             'Y-m-d H:i:s',
             $validated['completed_date'] . ' ' .
@@ -454,6 +482,12 @@ class AllOrderListController extends Controller
             if ($lockedOrder->current_status === 'delivered') {
                 throw ValidationException::withMessages([
                     'receiver_name' => '이미 배송완료 처리된 주문입니다.',
+                ]);
+            }
+
+            if (empty($lockedOrder->receiver_shop_id)) {
+                throw ValidationException::withMessages([
+                    'receiver_name' => '수주사 선정 후 배송완료 처리할 수 있습니다.',
                 ]);
             }
 
@@ -550,10 +584,10 @@ class AllOrderListController extends Controller
 
         $validated = $request->validate([
             'photo_field' => ['required', 'in:photo_shop,photo_site,photo_extra'],
-            'photo_file' => ['required', 'file', 'mimetypes:image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,application/pdf'],
+            'photo_file' => ['required', 'file', 'mimetypes:image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml'],
         ], [
             'photo_file.required' => '업로드할 사진을 선택해 주세요.',
-            'photo_file.mimetypes' => '이미지 또는 PDF 파일만 업로드할 수 있습니다.',
+            'photo_file.mimetypes' => '이미지 파일만 업로드할 수 있습니다.',
         ]);
 
         $field = $validated['photo_field'];

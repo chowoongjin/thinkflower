@@ -58,7 +58,7 @@ class HomeController extends Controller
 
             $recentOrders = Order::query()
                 ->with(['ordererShop', 'receiverShop'])
-                ->withCount('photos')
+                ->withCount(['uploadedPhotos as photos_count'])
                 ->where('orderer_shop_id', $shop->id)
                 ->where('is_hidden', 0)
                 ->orderByDesc('created_at')
@@ -67,7 +67,7 @@ class HomeController extends Controller
 
             $recentReceives = Order::query()
                 ->with(['ordererShop', 'receiverShop'])
-                ->withCount('photos')
+                ->withCount(['uploadedPhotos as photos_count'])
                 ->where('receiver_shop_id', $shop->id)
                 ->where('is_hidden', 0)
                 ->orderByDesc('created_at')

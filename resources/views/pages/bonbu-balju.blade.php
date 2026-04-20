@@ -120,7 +120,6 @@
 
             <form id="bonbu-balju-form" action="{{ route('bonbu-balju.order.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
-                <input type="hidden" name="delivery_now" id="delivery_now_hidden" value="{{ old('delivery_now') ? '1' : '0' }}">
                 <section class="mt30">
                     <table class="table-data collapse">
                         <colgroup>
@@ -176,13 +175,13 @@
                                 @error('product_image_file')
                                 <p class="mt5 color-red">{{ $message }}</p>
                                 @enderror
-                                @error('product_image_url')
+                                @error('product_image_input_url')
                                 <p class="mt5 color-red">{{ $message }}</p>
                                 @enderror
                             </td>
                         </tr>
                         <tr>
-                            <th>원청금액<em>*</em></th>
+                            <th>원청금액</th>
                             <td>
                                 <div class="moneyBox">
                                     <input type="text" name="original_amount" value="{{ old('original_amount', '50000') }}" id="price1-input">
@@ -249,7 +248,7 @@
                                 <div class="input-group-column">
                                     <div class="col">
                                         <div class="input-group-checkbox">
-                                            <input type="checkbox" id="delivery_now" {{ old('delivery_now') ? 'checked' : '' }}>
+                                            <input type="checkbox" name="delivery_now" value="1" id="delivery_now" {{ old('delivery_now') ? 'checked' : '' }}>
                                             <label for="delivery_now">지금즉시</label>
                                         </div>
                                     </div>
@@ -344,7 +343,7 @@
                                                        name="ribbon_quick"
                                                        value="{{ $ribbonOption }}"
                                                        id="ment{{ $idx + 1 }}"
-                                                    {{ (string) old('ribbon_quick', old('ribbon_phrase')) == (string) $ribbonOption ? 'checked' : '' }}>
+                                                    {{ (string) old('ribbon_phrase') == (string) $ribbonOption ? 'checked' : '' }}>
                                                 <label for="ment{{ $idx + 1 }}">{{ $ribbonOption }}</label>
                                             </li>
                                         @endforeach
@@ -392,7 +391,7 @@
                             <td>
                                 <div class="input-group-addr">
                                     <div class="input-group-checkbox mr5">
-                                        <input type="checkbox" name="request_photo" id="check1" value="1" {{ old('request_photo') ? 'checked' : '' }}>
+                                        <input type="checkbox" name="request_photo" id="check1" value="1" {{ session()->hasOldInput() ? (old('request_photo') ? 'checked' : '') : 'checked' }}>
                                         <label for="check1">현장사진요청</label>
                                     </div>
                                     <input type="text" name="request_note" id="request_note" value="{{ old('request_note') }}" placeholder="고객 및 발주사의 요청사항이 있다면 작성해주세요">
@@ -456,102 +455,98 @@
             const productPresetMap = {
                 '근조3단(기본)': {
                     product_detail: '근조3단(기본)',
-                    original_amount: 50000,
+                    original_amount: null,
+                    order_amount: 40000,
                     immediate: true,
-                    request_photo: true,
-                    ribbon_phrase: '삼가 고인의 명복을 빕니다'
+                    ribbon_phrase: '삼가 故人의 冥福을 빕니다'
                 },
                 '근조3단(고급)': {
                     product_detail: '근조3단(고급)',
-                    original_amount: 70000,
+                    original_amount: null,
+                    order_amount: 50000,
                     immediate: true,
-                    request_photo: true,
-                    ribbon_phrase: '삼가 고인의 명복을 빕니다'
+                    ribbon_phrase: '삼가 故人의 冥福을 빕니다'
                 },
                 '근조3단(특대)': {
                     product_detail: '근조3단(특대)',
-                    original_amount: 100000,
+                    original_amount: null,
+                    order_amount: 60000,
                     immediate: true,
-                    request_photo: true,
-                    ribbon_phrase: '삼가 고인의 명복을 빕니다'
+                    ribbon_phrase: '삼가 故人의 冥福을 빕니다'
                 },
                 '관엽식물': {
-                    product_detail: '금액에 맞게',
-                    original_amount: 80000,
-                    immediate: false,
-                    request_photo: false,
-                    ribbon_phrase: '축발전'
+                    product_detail: '금액에 맞는상품',
+                    original_amount: null,
+                    order_amount: 45000
                 },
                 '꽃바구니': {
-                    product_detail: '금액에 맞게',
-                    original_amount: 70000,
-                    immediate: false,
-                    request_photo: false,
-                    ribbon_phrase: '축발전'
+                    product_detail: '금액에 맞는상품',
+                    original_amount: null,
+                    order_amount: 45000
                 },
                 '서양란': {
-                    product_detail: '금액에 맞게',
-                    original_amount: 100000,
-                    immediate: false,
-                    request_photo: false,
-                    ribbon_phrase: '축발전'
+                    product_detail: '금액에 맞는상품',
+                    original_amount: null,
+                    order_amount: 45000
                 },
                 '동양란': {
-                    product_detail: '금액에 맞게',
-                    original_amount: 80000,
-                    immediate: false,
-                    request_photo: false,
-                    ribbon_phrase: '축발전'
+                    product_detail: '금액에 맞는상품',
+                    original_amount: null,
+                    order_amount: 45000
                 },
                 '축하3단(기본)': {
                     product_detail: '축하3단(기본)',
-                    original_amount: 50000,
-                    immediate: false,
-                    request_photo: false,
-                    ribbon_phrase: '축발전'
+                    original_amount: null,
+                    order_amount: 40000
                 },
                 '축하3단(고급)': {
                     product_detail: '축하3단(고급)',
-                    original_amount: 70000,
-                    immediate: false,
-                    request_photo: false,
-                    ribbon_phrase: '축발전'
+                    original_amount: null,
+                    order_amount: 50000
                 },
                 '축하3단(특대)': {
                     product_detail: '축하3단(특대)',
-                    original_amount: 100000,
-                    immediate: false,
-                    request_photo: false,
-                    ribbon_phrase: '축발전'
+                    original_amount: null,
+                    order_amount: 60000
                 },
                 '근조바구니': {
                     product_detail: '근조바구니',
-                    original_amount: 70000,
+                    original_amount: null,
+                    order_amount: 40000,
                     immediate: true,
-                    request_photo: true,
-                    ribbon_phrase: '삼가 고인의 명복을 빕니다'
+                    ribbon_phrase: '삼가 故人의 冥福을 빕니다'
                 },
                 '근조쌀화환': {
                     product_detail: '근조쌀화환',
-                    original_amount: 100000,
+                    original_amount: null,
+                    order_amount: 60000,
                     immediate: true,
-                    request_photo: true,
-                    ribbon_phrase: '삼가 고인의 명복을 빕니다'
+                    ribbon_phrase: '삼가 故人의 冥福을 빕니다'
                 },
                 '축하쌀화환': {
                     product_detail: '축하쌀화환',
-                    original_amount: 100000,
-                    immediate: false,
-                    request_photo: false,
-                    ribbon_phrase: '축발전'
+                    original_amount: null,
+                    order_amount: 60000
                 },
                 '근조오브제': {
                     product_detail: '근조오브제',
-                    original_amount: 120000,
+                    original_amount: null,
+                    order_amount: 40000,
                     immediate: true,
-                    request_photo: true,
-                    ribbon_phrase: '삼가 고인의 명복을 빕니다'
+                    ribbon_phrase: '삼가 故人의 冥福을 빕니다'
                 }
+            };
+
+            const productPresetDefaults = {
+                product_detail: '',
+                original_amount: '50000',
+                order_amount: '40000',
+                delivery_now: false,
+                delivery_date: @json(now()->format('Y-m-d')),
+                delivery_hour: '',
+                delivery_minute: '0',
+                delivery_time_type: '도착',
+                ribbon_phrase: ''
             };
 
             function ensurePanelState() {
@@ -693,33 +688,53 @@
                 setMoneyValue('#price2-input', orderAmount);
             }
 
+            function resetProductPresetFields() {
+                $('input[name="product_detail"]').val(productPresetDefaults.product_detail);
+                $('#price1-input').val(productPresetDefaults.original_amount);
+                $('#price2-input').val(productPresetDefaults.order_amount);
+                $('#delivery_now').prop('checked', productPresetDefaults.delivery_now);
+                $('#delivery_date').val(productPresetDefaults.delivery_date);
+                $('#delivery_hour').val(productPresetDefaults.delivery_hour);
+                $('#delivery_minute').val(productPresetDefaults.delivery_minute);
+                $('input[name="delivery_time_type"]').prop('checked', false);
+
+                if (productPresetDefaults.delivery_time_type !== '') {
+                    $(`input[name="delivery_time_type"][value="${productPresetDefaults.delivery_time_type}"]`).prop('checked', true);
+                }
+
+                $('#ribbon_phrase').val(productPresetDefaults.ribbon_phrase);
+                setRibbonQuickChecked(productPresetDefaults.ribbon_phrase);
+            }
+
             function applyProductPreset(productName) {
                 const preset = productPresetMap[productName];
+                resetProductPresetFields();
+
                 if (!preset) {
                     updateSummary();
                     return;
                 }
 
-                $('input[name="product_detail"]').val(preset.product_detail || productName);
-
-                if (preset.original_amount) {
-                    setMoneyValue('#price1-input', preset.original_amount);
-                    syncOrderAmountFromOriginal();
+                if (Object.prototype.hasOwnProperty.call(preset, 'product_detail')) {
+                    $('input[name="product_detail"]').val(preset.product_detail || '');
                 }
 
-                setRibbonQuickChecked(preset.ribbon_phrase || '');
-                $('#ribbon_phrase').val(preset.ribbon_phrase || '');
+                if (Object.prototype.hasOwnProperty.call(preset, 'original_amount')) {
+                    setMoneyValue('#price1-input', preset.original_amount);
+                }
 
-                $('#check1').prop('checked', !!preset.request_photo);
-                syncRequestPhotoNote();
+                if (Object.prototype.hasOwnProperty.call(preset, 'order_amount')) {
+                    setMoneyValue('#price2-input', preset.order_amount);
+                }
 
-                if (preset.immediate) {
+                if (preset.immediate === true) {
                     $('#delivery_now').prop('checked', true);
-                    $('#delivery_now_hidden').val('1');
                     setImmediateDeliveryTime(false);
-                } else {
-                    $('#delivery_now').prop('checked', false);
-                    $('#delivery_now_hidden').val('0');
+                }
+
+                if (Object.prototype.hasOwnProperty.call(preset, 'ribbon_phrase')) {
+                    $('#ribbon_phrase').val(preset.ribbon_phrase || '');
+                    setRibbonQuickChecked(preset.ribbon_phrase || '');
                 }
 
                 updateSummary();
@@ -735,6 +750,7 @@
                 const deliveryHour = $('#delivery_hour').val() || '';
                 const deliveryMinute = $('#delivery_minute').val() || '';
                 const deliveryType = $('input[name="delivery_time_type"]:checked').val() || '';
+                const limitedDeliveryPlace = Array.from(deliveryPlace).slice(0, 11).join('');
 
                 $('#summary-product-detail').text(
                     productDetail !== '' ? productDetail : (productName !== '' ? productName : '미 입력 상태')
@@ -746,7 +762,7 @@
                     .text(formattedOrderAmount !== '' ? formattedOrderAmount + '원' : '미 입력 상태')
                     .toggleClass('color-gray400', formattedOrderAmount === '');
 
-                $('#summary-delivery-place').text(deliveryPlace !== '' ? deliveryPlace : '미 입력 상태');
+                $('#summary-delivery-place').text(limitedDeliveryPlace !== '' ? limitedDeliveryPlace : '미 입력 상태');
                 $('#summary-recipient-name').text(recipientName !== '' ? recipientName : '미 입력 상태');
 
                 if (deliveryDate !== '' && deliveryHour !== '' && deliveryMinute !== '') {
@@ -764,6 +780,8 @@
                     $('#summary-delivery-datetime').text('미 입력 상태');
                 }
             }
+
+            let imagePreviewToken = 0;
 
             function openImagePanelIfNeeded() {
                 const $imagePanel = $('.panel[data-panel="image"]');
@@ -783,8 +801,60 @@
                 }
             }
 
+            function clearImagePreview() {
+                $('#summary-image-preview').attr('src', '').hide();
+            }
+
             function showPreviewFromUrl(url) {
                 $('#summary-image-preview').attr('src', url).show();
+                openImagePanelIfNeeded();
+            }
+
+            function showPreviewFromFile(file) {
+                if (!file) {
+                    syncImagePreview();
+                    return;
+                }
+
+                const previewToken = ++imagePreviewToken;
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    if (previewToken !== imagePreviewToken) {
+                        return;
+                    }
+
+                    const result = e.target?.result || '';
+
+                    if (result === '') {
+                        clearImagePreview();
+                    } else {
+                        $('#summary-image-preview').attr('src', result).show();
+                    }
+
+                    openImagePanelIfNeeded();
+                };
+
+                reader.readAsDataURL(file);
+            }
+
+            function syncImagePreview() {
+                const file = $('#file').get(0)?.files?.[0] || null;
+                const imageUrl = ($('#product_image_url').val() || '').trim();
+
+                if (file) {
+                    showPreviewFromFile(file);
+                    return;
+                }
+
+                imagePreviewToken += 1;
+
+                if (imageUrl !== '') {
+                    showPreviewFromUrl(imageUrl);
+                    return;
+                }
+
+                clearImagePreview();
                 openImagePanelIfNeeded();
             }
 
@@ -869,8 +939,6 @@
             });
 
             $(document).on('change', '#delivery_now', function () {
-                $('#delivery_now_hidden').val($(this).is(':checked') ? '1' : '0');
-
                 if ($(this).is(':checked')) {
                     setImmediateDeliveryTime(true);
                 }
@@ -890,6 +958,10 @@
                 $('#ribbon_phrase').val($(this).val());
             });
 
+            $(document).on('input blur', '#ribbon_phrase', function () {
+                setRibbonQuickChecked($(this).val());
+            });
+
             $(document).on('change', '#check1', function () {
                 syncRequestPhotoNote();
             });
@@ -899,34 +971,11 @@
             });
 
             $(document).on('change', '#file', function () {
-                const file = this.files && this.files[0] ? this.files[0] : null;
-
-                if (!file) {
-                    $('#summary-image-preview').attr('src', '').hide();
-                    openImagePanelIfNeeded();
-                    return;
-                }
-
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    $('#summary-image-preview').attr('src', e.target.result).show();
-                    openImagePanelIfNeeded();
-                };
-                reader.readAsDataURL(file);
+                syncImagePreview();
             });
 
             $(document).on('input blur', '#product_image_url', function () {
-                const imageUrl = ($(this).val() || '').trim();
-
-                if (imageUrl === '') {
-                    if (!($('#file').get(0)?.files?.length > 0)) {
-                        $('#summary-image-preview').attr('src', '').hide();
-                    }
-                    openImagePanelIfNeeded();
-                    return;
-                }
-
-                showPreviewFromUrl(imageUrl);
+                syncImagePreview();
             });
 
             $(document).on('click', '#btn-preview-order', function () {
@@ -960,19 +1009,14 @@
             }
 
             updateSummary();
-            openImagePanelIfNeeded();
-
-            const initialImageUrl = ($('#product_image_url').val() || '').trim();
-            if (initialImageUrl !== '') {
-                showPreviewFromUrl(initialImageUrl);
-            }
+            syncImagePreview();
 
             const initProduct = $('input[name="product_name"]:checked').val();
             if (initProduct && !hasOldInput) {
                 applyProductPreset(initProduct);
             }
 
-            $('#delivery_now_hidden').val($('#delivery_now').is(':checked') ? '1' : '0');
+            setRibbonQuickChecked($('#ribbon_phrase').val());
         });
     </script>
 @endpush

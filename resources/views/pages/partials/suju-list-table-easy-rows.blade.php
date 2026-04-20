@@ -98,23 +98,29 @@
                         <img src="{{ asset('assets/img/ico_photo_on.png') }}" height="18">
                     </a>
                 @elseif($photoCount >= 1)
-                    <a href="{{ route('suju-list.photo-popup', $order) }}"
+                    <a href="{{ route('suju-list.complete-popup', $order) }}"
                        class="order-photo-popup-link"
                        data-popup-url="{{ route('suju-list.complete-popup', $order) }}">
                         <img src="{{ asset('assets/img/ico_photo_on.png') }}" height="18">
                     </a>
                 @else
-                    <a href="{{ route('suju-list.photo-popup', $order) }}"
+                    <a href="{{ route('suju-list.complete-popup', $order) }}"
                        class="order-photo-popup-link"
                        data-popup-url="{{ route('suju-list.complete-popup', $order) }}">
                         <img src="{{ asset('assets/img/ico_photo_off.png') }}" height="18">
                     </a>
                 @endif
             @else
-                @if($photoCount > 0)
+                @if($photoCount >= 3)
                     <a href="{{ route('suju-list.photo-popup', $order) }}"
                        class="order-photo-popup-link"
                        data-popup-url="{{ route('suju-list.photo-popup', $order) }}">
+                        <img src="{{ asset('assets/img/ico_photo_on.png') }}" height="18">
+                    </a>
+                @elseif($photoCount >= 1)
+                    <a href="{{ route('suju-list.complete-popup', $order) }}"
+                       class="order-photo-popup-link"
+                       data-popup-url="{{ route('suju-list.complete-popup', $order) }}">
                         <img src="{{ asset('assets/img/ico_photo_on.png') }}" height="18">
                     </a>
                 @else
